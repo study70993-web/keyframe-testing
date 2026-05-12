@@ -497,6 +497,19 @@ const MAX_ZOOM = 3;
 
 function uid() { return 'n' + (state.nextId++); }
 function gid() { return 'g' + (state.nextGroupId++); }
+function nextGroupName() {
+  const used = new Set(state.groups.map(g => g.name));
+  let index = 1;
+  while (used.has(`Group ${index}`)) index++;
+  return `Group ${index}`;
+}
+function syncNextGroupId() {
+  const maxGroupNum = state.groups.reduce((max, group) => {
+    const match = String(group.name || '').match(/^Group\s+(\d+)$/);
+    return match ? Math.max(max, Number(match[1])) : max;
+  }, 0);
+  state.nextGroupId = Math.max(state.nextGroupId, maxGroupNum + 1);
+}
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
@@ -549,7 +562,8 @@ function restoreSnapshot(snap) {
     applyNodeScale(n);
   });
   state.groups = [];
-  snap.groups.forEach(saved => createGroupFromData(saved));
+  snap.groups.forEach(saved => createGroupFromData(saved, { preserveName: true }));
+  syncNextGroupId();
   state.selectedNodes = new Set(snap.selectedNodes || []);
   state.selectedGroup = snap.selectedGroup || null;
   state.selectedConnection = snap.selectedConnection || null;
@@ -808,7 +822,7 @@ function createGroupFromSelection() {
   pushHistory();
   const bounds = getNodeBounds(nodes, 28);
   const id = gid();
-  const group = { id, name: `Group ${state.nextGroupId - 1}`, nodeIds: nodes.map(n => n.id), x: bounds.x, y: bounds.y, w: bounds.w, h: bounds.h, el: null, handles: [], manualSize: false };
+  const group = { id, name: nextGroupName(), nodeIds: nodes.map(n => n.id), x: bounds.x, y: bounds.y, w: bounds.w, h: bounds.h, el: null, handles: [], manualSize: false };
   nodes.forEach(n => n.groupId = id);
   const el = document.createElement('div');
   el.className = 'group-frame';
@@ -843,9 +857,9 @@ function createGroupFromSelection() {
   selectGroup(id);
   showToast('Group created');
 }
-function createGroupFromData(saved) {
+function createGroupFromData(saved, options = {}) {
   const group = {
-    id: saved.id, name: saved.name, nodeIds: [...saved.nodeIds], x: saved.x, y: saved.y,
+    id: saved.id, name: options.preserveName ? saved.name : nextGroupName(), nodeIds: [...saved.nodeIds], x: saved.x, y: saved.y,
     w: saved.w, h: saved.h, el: null, handles: [], manualSize: !!saved.manualSize
   };
   const el = document.createElement('div');
@@ -994,13 +1008,26 @@ function deleteSelection() {
 function copySelection() {
   const ids = new Set(state.selectedNodes);
   if (!ids.size) return;
+  const copiedGroups = state.groups
+    .filter(group => group.nodeIds.every(id => ids.has(id)))
+    .map(group => ({
+      id: group.id,
+      name: group.name,
+      nodeIds: [...group.nodeIds],
+      x: group.x,
+      y: group.y,
+      w: group.w,
+      h: group.h,
+      manualSize: !!group.manualSize
+    }));
   state.clipboard = {
     nodes: state.nodes.filter(n => ids.has(n.id)).map(n => ({
       id: n.id, type: n.type, x: n.x, y: n.y, scale: n.scale || 1,
       data: JSON.parse(JSON.stringify(n.data || {})),
       width: n.el.style.width || '', minHeight: n.el.style.minHeight || ''
     })),
-    connections: state.connections.filter(c => ids.has(c.from) && ids.has(c.to)).map(c => ({ from: c.from, to: c.to, state: 'idle' })),
+    connections: state.connections.filter(c => ids.has(c.from) && ids.has(c.to)).map(c => ({ from: c.from, to: c.to, port: c.port || 'in', state: 'idle' })),
+    groups: copiedGroups,
     nodeIds: [...ids]
   };
   showToast('Copied');
@@ -1022,7 +1049,21 @@ function pasteClipboard() {
   });
   state.clipboard.connections.forEach(c => {
     const from = idMap.get(c.from), to = idMap.get(c.to);
-    if (from && to) state.connections.push({ id: uid(), from, to, state: 'idle' });
+    if (from && to) state.connections.push({ id: uid(), from, to, port: c.port || 'in', state: 'idle' });
+  });
+  (state.clipboard.groups || []).forEach(group => {
+    const nodeIds = group.nodeIds.map(id => idMap.get(id)).filter(Boolean);
+    if (nodeIds.length < 2) return;
+    createGroupFromData({
+      id: gid(),
+      name: group.name,
+      nodeIds,
+      x: group.x + 32,
+      y: group.y + 32,
+      w: group.w,
+      h: group.h,
+      manualSize: group.manualSize
+    });
   });
   syncSelectionUI();
   renderConnections();
