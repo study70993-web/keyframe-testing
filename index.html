@@ -58,7 +58,7 @@
     .action-btn {
       height: 28px; border: 1px solid transparent; border-radius: 9px; background: transparent;
       color: var(--text2); display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-      padding: 0 8px; font: 600 12px 'DM Sans', sans-serif; cursor: pointer; transition: all .15s;
+      padding: 0 7px; font: 600 11.5px 'DM Sans', sans-serif; cursor: pointer; transition: all .15s;
       white-space: nowrap;
     }
     .action-btn:hover { background: var(--surface2); border-color: var(--border); color: var(--text); }
@@ -282,18 +282,27 @@
     .gen-btn.running { background: var(--surface2); color: var(--text2); cursor: not-allowed; transform: none; }
     .gen-btn .cost { font-size: 10px; opacity: .8; font-family: 'DM Mono', monospace; }
     .node-resize-handle {
-      position: absolute; right: 5px; bottom: 5px; width: 14px; height: 14px; cursor: nwse-resize; opacity: .55;
+      position: absolute; right: 2px; bottom: 2px; width: 22px; height: 22px; cursor: nwse-resize; opacity: .55;
       background: linear-gradient(135deg, transparent 0 50%, rgba(255,255,255,.25) 50% 58%, transparent 58% 100%), linear-gradient(135deg, transparent 0 68%, rgba(255,255,255,.18) 68% 76%, transparent 76% 100%);
       border-radius: 3px;
     }
     .node-resize-handle:hover { opacity: .9; }
-    .node-ports-left { position: absolute; left: -20px; top: 64px; display: flex; flex-direction: column; gap: 48px; z-index: 3; }
+    .node-ports-left { position: absolute; left: -20px; top: 64px; display: flex; flex-direction: column; gap: 38px; z-index: 3; }
+    .node-ports-left.generic { top: 50%; transform: translateY(-50%); gap: 0; }
     .port-left {
       width: 20px; height: 20px; border-radius: 50%; background: var(--surface3); border: 1px solid var(--border);
       display: flex; align-items: center; justify-content: center; cursor: crosshair; transition: all .15s; position: relative;
     }
     .port-left:hover { border-color: var(--blue); background: rgba(74,158,255,.1); }
     .port-left .port-label { position: absolute; right: 26px; top: 50%; transform: translateY(-50%); font-size: 9px; color: var(--text3); white-space: nowrap; font-family: 'DM Mono', monospace; pointer-events: none; }
+    .port-left .port-dot-icon { width: 10px; height: 10px; color: var(--text2); }
+    .frame-output-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
+    .frame-output-btn {
+      min-height: 25px; border-radius: 7px; border: 1px solid rgba(245,200,66,.22);
+      background: rgba(245,200,66,.08); color: var(--accent); font: 600 10.5px 'DM Sans', sans-serif;
+      cursor: pointer;
+    }
+    .frame-output-btn:hover { border-color: rgba(245,200,66,.42); background: rgba(245,200,66,.12); }
 
     #bottombar {
       position: fixed; bottom: 0; left: 0; right: 0; height: 44px; z-index: 1000;
@@ -388,7 +397,14 @@
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2H2v4M10 2h4v4M6 14H2v-4M10 14h4v-4"/><path d="M5 5l-3-3M11 5l3-3M5 11l-3 3M11 11l3 3"/></svg>
         Fit
       </button>
+      <button class="action-btn" id="toolbar-run-images" title="Run only image nodes">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="12" height="10" rx="2"/><path d="M6 8l2 2 3-4"/></svg>
+        Run imgs
+      </button>
       <div class="toolbar-sep"></div>
+      <button class="action-btn" id="toolbar-download-media" title="Download all media">Media</button>
+      <button class="action-btn" id="toolbar-download-images" title="Download all images">Images</button>
+      <button class="action-btn" id="toolbar-download-videos" title="Download all videos">Videos</button>
       <button class="action-btn icon-only" id="toolbar-download" title="Download project JSON">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8"/><path d="M4.5 6.5L8 10l3.5-3.5"/><path d="M3 13h10"/></svg>
       </button>
@@ -629,24 +645,25 @@ function buildNodeHTML(type, id, data, def) {
     return `<div class="node-header"></div><div class="node-body"><textarea class="sticky-textarea" data-node="${id}" placeholder="Add text">${esc(data.text || '')}</textarea></div>`;
   }
   const header = `<div class="node-header"><div class="node-icon" style="background:${def.iconBg};color:${def.iconColor}">${def.iconSvg}</div><span class="node-title">${def.title}</span><div class="node-port-out" data-node="${id}" data-port="out"><svg viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 4h4M4 2l2 2-2 2"/></svg></div></div>`;
-  if (type === 'prompt') return header + `<div class="node-body"><textarea class="prompt-textarea" data-node="${id}" placeholder="Write your prompt...">${esc(data.text)}</textarea></div>`;
+  const genericInput = `<div class="node-ports-left generic"><div class="port-left" data-node="${id}" data-port="in" title="Input"><svg class="port-dot-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8h10"/><path d="M8 4l4 4-4 4"/></svg></div></div>`;
+  if (type === 'prompt') return header + genericInput + `<div class="node-body"><textarea class="prompt-textarea" data-node="${id}" placeholder="Write your prompt...">${esc(data.text)}</textarea></div>`;
   if (type === 'image' || type === 'upload') {
     const ratioHTML = RATIOS.map(r => `<button class="ratio-btn${r === data.ratio ? ' active' : ''}" data-ratio="${r}" data-node="${id}">${r}</button>`).join('');
-    return header + `<div class="node-body"><div class="img-thumb">${data.src ? `<img src="${data.src}" alt=""/>` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);flex-direction:column;gap:6px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="10" r="1.5"/><path d="M3 16l5-5 4 4 3-3 6 6"/></svg><span style="font-size:10px">Upload image</span></div>`}<div class="img-overlay"><button onclick="replaceImage('${id}')">Replace image</button></div></div><div class="ratio-row">${ratioHTML}</div></div>`;
+    return header + genericInput + `<div class="node-body"><div class="img-thumb">${data.src ? `<img src="${data.src}" alt=""/>` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);flex-direction:column;gap:6px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="10" r="1.5"/><path d="M3 16l5-5 4 4 3-3 6 6"/></svg><span style="font-size:10px">Upload image</span></div>`}<div class="img-overlay"><button onclick="replaceImage('${id}')">Replace image</button></div></div><div class="ratio-row">${ratioHTML}</div></div>`;
   }
   if (type === 'videogen') {
     const modelOpts = MODELS.map(m => `<option${m === data.model ? ' selected' : ''}>${m}</option>`).join('');
     const ratioOpts = RATIOS.map(r => `<option${r === data.ratio ? ' selected' : ''}>${r}</option>`).join('');
-    return header + `<div class="node-body video-gen-body"><div class="node-ports-left" id="ports-${id}"><div class="port-left" data-node="${id}" data-port="prompt"><span class="port-label">T</span></div><div class="port-left" data-node="${id}" data-port="img1"><span class="port-label">E</span></div><div class="port-left" data-node="${id}" data-port="img2"><span class="port-label">I</span></div><div class="port-left" data-node="${id}" data-port="ref"><span class="port-label">⊡</span></div></div>
+    return header + `<div class="node-body video-gen-body"><div class="node-ports-left" id="ports-${id}"><div class="port-left" data-node="${id}" data-port="prompt" title="Prompt input"><span class="port-label">Prompt</span></div><div class="port-left" data-node="${id}" data-port="first" title="First frame input"><span class="port-label">First</span></div><div class="port-left" data-node="${id}" data-port="last" title="Last frame input"><span class="port-label">Last</span></div><div class="port-left" data-node="${id}" data-port="ref" title="Reference input"><span class="port-label">Ref</span></div><div class="port-left" data-node="${id}" data-port="audio" title="Audio input"><span class="port-label">Audio</span></div></div>
     <div class="video-preview" id="vp-${id}"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M5 4h10v10H5zM15 8l4-2v8l-4-2z"/></svg><span>Image/video preview</span></div>${data.stale ? '<div class="stale-badge">Stale</div>' : ''}</div>
     <div class="video-control-row"><label class="api-pill wide"><span>Model</span><select class="field-select compact-select" data-node="${id}" data-field="model">${modelOpts}</select></label><label class="api-pill"><span>AR</span><select class="field-select compact-select" data-node="${id}" data-field="ratio">${ratioOpts}</select></label><label class="api-pill"><span>Res</span><select class="field-select compact-select" data-node="${id}" data-field="resolution"><option>480p</option><option${data.resolution==='720p'?' selected':''}>720p</option><option>1080p</option><option>4K</option></select></label><label class="api-pill"><span>Quality</span><select class="field-select compact-select" data-node="${id}" data-field="quality"><option>Draft</option><option${data.quality==='Standard'?' selected':''}>Standard</option><option>High</option><option>Ultra</option></select></label><label class="api-pill"><span>Dur</span><select class="field-select compact-select" data-node="${id}" data-field="duration"><option value="4">4s</option><option value="8"${data.duration==='8'?' selected':''}>8s</option><option value="16">16s</option></select></label></div>
-    <div class="image-chip-row" id="image-chip-row-${id}">${buildVideoImageChips(id)}</div><div class="prompt-chip-row"><button class="chip-btn prompt-chip active" type="button" data-node="${id}" data-field="promptMode" data-value="order">prompt order</button><button class="chip-btn prompt-chip" type="button" data-node="${id}" data-field="promptMode" data-value="preview">preview</button><button class="chip-btn prompt-chip small" type="button" data-node="${id}" data-field="promptMode" data-value="first_words">just first few words</button></div>
+    <div class="image-chip-row" id="image-chip-row-${id}">${buildVideoImageChips(id)}</div><div class="frame-output-row"><button class="frame-output-btn" type="button">First frame</button><button class="frame-output-btn" type="button">Last frame</button><button class="frame-output-btn" type="button">Specific frame</button></div><div class="prompt-chip-row"><button class="chip-btn prompt-chip active" type="button" data-node="${id}" data-field="promptMode" data-value="order">prompt order</button><button class="chip-btn prompt-chip" type="button" data-node="${id}" data-field="promptMode" data-value="preview">preview</button><button class="chip-btn prompt-chip small" type="button" data-node="${id}" data-field="promptMode" data-value="first_words">just first few words</button></div>
     <textarea class="video-prompt-box" data-node="${id}" data-field="promptText" placeholder="Text box / generation instructions...">${esc(data.promptText || '')}</textarea><div class="video-footer-row"><div class="mute-pill" title="Mute audio"><span>mute</span><div class="toggle${data.muted?' on':''}" data-node="${id}" data-field="muted"></div></div><button class="gen-btn" data-node="${id}" data-action="generate"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M1 1.5l7 3.5-7 3.5z"/></svg>Generate<span class="cost">⚡ 483</span></button></div><div class="node-resize-handle" title="Resize node"></div><div class="node-progress"><div class="node-progress-bar" style="width:0%" id="prog-${id}"></div></div></div>`;
   }
-  if (type === 'voiceover' || type === 'llm') return header + `<div class="node-body"><textarea class="prompt-textarea" data-node="${id}" placeholder="${type==='llm'?'Ask anything...':'Add voiceover text...'}" style="min-height:70px">${esc(data.text)}</textarea><button class="gen-btn" data-node="${id}" data-action="generate" style="margin-top:8px;"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M1 1.5l7 3.5-7 3.5z"/></svg>Generate<span class="cost">⚡ ${type==='llm'?'10':'50'}</span></button></div>`;
+  if (type === 'voiceover' || type === 'llm') return header + genericInput + `<div class="node-body"><textarea class="prompt-textarea" data-node="${id}" placeholder="${type==='llm'?'Ask anything...':'Add voiceover text...'}" style="min-height:70px">${esc(data.text)}</textarea><button class="gen-btn" data-node="${id}" data-action="generate" style="margin-top:8px;"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M1 1.5l7 3.5-7 3.5z"/></svg>Generate<span class="cost">⚡ ${type==='llm'?'10':'50'}</span></button></div>`;
   const placeholderMap = { imagegen:'Describe the image you want to generate...', voicegen:'Write the voice generation text...', assets:'Search or describe assets...', changevoice:'Add text/audio notes for voice change...', translate:'Paste text to translate...', text:'Write text...', stickynote:'Write a note...' };
   const costMap = { imagegen:'120', voicegen:'50', assets:'0', changevoice:'70', translate:'20', text:'0', stickynote:'0' };
-  return header + `<div class="node-body"><textarea class="prompt-textarea" data-node="${id}" placeholder="${placeholderMap[type] || 'Write here...'}" style="min-height:${type === 'stickynote' ? '110px' : '80px'}">${esc(data.text || '')}</textarea>${type === 'imagegen' ? `<div class="ratio-row">${RATIOS.map(r => `<button class="ratio-btn${r === (data.ratio || '16:9') ? ' active' : ''}" data-ratio="${r}" data-node="${id}">${r}</button>`).join('')}</div>` : ''}${type !== 'text' && type !== 'stickynote' ? `<button class="gen-btn" data-node="${id}" data-action="generate" style="margin-top:8px;"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M1 1.5l7 3.5-7 3.5z"/></svg>Generate<span class="cost">⚡ ${costMap[type] || '0'}</span></button><div class="node-progress"><div class="node-progress-bar" style="width:0%" id="prog-${id}"></div></div>` : ''}</div>`;
+  return header + genericInput + `<div class="node-body"><textarea class="prompt-textarea" data-node="${id}" placeholder="${placeholderMap[type] || 'Write here...'}" style="min-height:${type === 'stickynote' ? '110px' : '80px'}">${esc(data.text || '')}</textarea>${type === 'imagegen' ? `<div class="ratio-row">${RATIOS.map(r => `<button class="ratio-btn${r === (data.ratio || '16:9') ? ' active' : ''}" data-ratio="${r}" data-node="${id}">${r}</button>`).join('')}</div>` : ''}${type !== 'text' && type !== 'stickynote' ? `<button class="gen-btn" data-node="${id}" data-action="generate" style="margin-top:8px;"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M1 1.5l7 3.5-7 3.5z"/></svg>Generate<span class="cost">⚡ ${costMap[type] || '0'}</span></button><div class="node-progress"><div class="node-progress-bar" style="width:0%" id="prog-${id}"></div></div>` : ''}</div>`;
 }
 function autoSizeStickyTextArea(ta, nodeObj) {
   if (!ta.classList.contains('sticky-textarea')) return;
@@ -1112,16 +1129,22 @@ function finishConnect(e) {
   if (!state.connectingFrom) return;
   const { nodeId } = state.connectingFrom;
   const els = document.elementsFromPoint(e.clientX, e.clientY);
-  let targetNode = null;
+  let targetNode = null, targetPort = null;
   for (const el of els) {
-    const nodeEl = el.closest('.node');
-    if (nodeEl && nodeEl.id !== nodeId) { targetNode = state.nodes.find(n => n.id === nodeEl.id); break; }
+    const portEl = el.closest?.('.port-left');
+    if (portEl && portEl.dataset.node !== nodeId) {
+      targetPort = portEl;
+      targetNode = state.nodes.find(n => n.id === portEl.dataset.node);
+      break;
+    }
   }
   if (tempLine) { svg.removeChild(tempLine); tempLine = null; }
   if (tempDot) { svg.removeChild(tempDot); tempDot = null; }
-  if (targetNode && !state.connections.find(c => c.from === nodeId && c.to === targetNode.id)) {
-    state.connections.push({ id: uid(), from: nodeId, to: targetNode.id, state: 'idle' });
+  if (targetNode && targetPort && !state.connections.find(c => c.from === nodeId && c.to === targetNode.id && c.port === targetPort.dataset.port)) {
+    state.connections.push({ id: uid(), from: nodeId, to: targetNode.id, port: targetPort.dataset.port || 'in', state: 'idle' });
     renderConnections(); refreshAllVideoInputChips(); showToast('Connected!');
+  } else if (!targetNode) {
+    showToast('Drop on a left input port');
   }
   state.connectingFrom = null;
 }
@@ -1132,12 +1155,12 @@ function renderConnections() {
     if (!fromNode || !toNode) return;
     const fromPort = getNodeOutputPort(fromNode), inputPorts = Array.from(toNode.el.querySelectorAll('.port-left'));
     const incoming = state.connections.filter(c => c.to === toNode.id), portIndex = Math.max(0, incoming.findIndex(c => c.id === conn.id));
-    const toPort = inputPorts.length ? inputPorts[Math.min(portIndex, inputPorts.length - 1)] : null;
+    const toPort = inputPorts.find(port => port.dataset.port === conn.port) || (inputPorts.length ? inputPorts[Math.min(portIndex, inputPorts.length - 1)] : null);
     const fp = fromPort ? getPortCenter(fromPort) : getNodeCenter(fromNode), tp = toPort ? getPortCenter(toPort) : getNodeCenter(toNode);
     const isRunning = conn.state === 'running';
     const d = isRunning && state.squiggle ? makePremiumWavyPath(fp, tp) : makeCalmPath(fp, tp);
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.classList.add('conn-group'); if (conn.state === 'running') g.classList.add('running'); if (state.selectedConnection === conn.id) g.classList.add('selected');
-    const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path'); hitPath.classList.add('conn-hit'); hitPath.setAttribute('d', d); hitPath.addEventListener('mousedown', e => { e.stopPropagation(); if (e.button === 0) selectConnection(conn.id); });
+    const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path'); hitPath.classList.add('conn-hit'); hitPath.setAttribute('d', d); hitPath.addEventListener('mousedown', e => { e.stopPropagation(); if (e.button === 0) selectConnection(conn.id); }); hitPath.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); pushHistory(); state.connections = state.connections.filter(c => c.id !== conn.id); if (state.selectedConnection === conn.id) state.selectedConnection = null; renderConnections(); refreshAllVideoInputChips(); showToast('Connection deleted'); });
     const glowPath = document.createElementNS('http://www.w3.org/2000/svg', 'path'); glowPath.classList.add('conn-line-shadow'); if (conn.state === 'running') glowPath.classList.add('running'); if (isRunning && !state.squiggle) glowPath.classList.add('calm-running'); glowPath.setAttribute('d', d);
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); path.classList.add('conn-line'); if (conn.state === 'running') path.classList.add('running'); else if (conn.state === 'done') path.classList.add('done'); else if (conn.state === 'active') path.classList.add('active'); if (state.selectedConnection === conn.id) path.classList.add('selected'); if (isRunning && !state.squiggle) path.classList.add('calm-running'); path.setAttribute('d', d); path.dataset.fromX = fp.x; path.dataset.fromY = fp.y; path.dataset.toX = tp.x; path.dataset.toY = tp.y;
     const dotFrom = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); dotFrom.classList.add('conn-dot'); if (conn.state === 'running') dotFrom.classList.add('running'); dotFrom.setAttribute('cx', fp.x); dotFrom.setAttribute('cy', fp.y);
@@ -1153,8 +1176,8 @@ function renderConnections() {
 function nodeHasConnection(nodeId) {
   return state.connections.some(c => c.from === nodeId || c.to === nodeId);
 }
-function runNode(nodeObj, delay = 0, silent = false) {
-  if (!nodeHasConnection(nodeObj.id)) {
+function runNode(nodeObj, delay = 0, silent = false, force = false) {
+  if (!force && !nodeHasConnection(nodeObj.id)) {
     if (!silent) showToast('Connect this node first');
     return Promise.resolve(false);
   }
@@ -1215,6 +1238,13 @@ canvasWrap.addEventListener('mousedown', e => {
       setSelectionBox(p.x, p.y, p.x, p.y);
     }
   }
+});
+canvasWrap.addEventListener('dblclick', e => {
+  if (e.target.closest('.node, .group-frame, #ctx-menu')) return;
+  pushHistory();
+  const p = screenToCanvas(e.clientX, e.clientY);
+  createNode('prompt', p.x, p.y);
+  showToast('Prompt added');
 });
 document.addEventListener('mousemove', e => {
   if (state.isPanning) { state.panX = e.clientX - state.panStart.x; state.panY = e.clientY - state.panStart.y; applyTransform(); renderConnections(); }
@@ -1385,6 +1415,50 @@ function downloadProject() {
   link.remove();
   URL.revokeObjectURL(link.href);
 }
+function mediaExt(src, fallback) {
+  const match = String(src || '').match(/^data:([^;]+)/);
+  if (!match) return fallback;
+  if (match[1].includes('png')) return 'png';
+  if (match[1].includes('jpeg')) return 'jpg';
+  if (match[1].includes('webp')) return 'webp';
+  if (match[1].includes('mp4')) return 'mp4';
+  if (match[1].includes('webm')) return 'webm';
+  return fallback;
+}
+function downloadUrl(src, filename) {
+  const link = document.createElement('a');
+  link.href = src;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+function collectMedia(kind) {
+  const images = [];
+  const videos = [];
+  state.nodes.forEach((node, index) => {
+    if (node.data?.src) images.push({ src: node.data.src, name: `image-${index + 1}.${mediaExt(node.data.src, 'png')}` });
+    if (node.data?.videoSrc) videos.push({ src: node.data.videoSrc, name: `video-${index + 1}.${mediaExt(node.data.videoSrc, 'mp4')}` });
+  });
+  if (kind === 'images') return images;
+  if (kind === 'videos') return videos;
+  return [...images, ...videos];
+}
+function downloadMedia(kind) {
+  const media = collectMedia(kind);
+  if (!media.length) { showToast(`No ${kind} to download`); return; }
+  media.forEach(item => downloadUrl(item.src, item.name));
+  showToast(`Downloading ${media.length} ${kind}`);
+}
+async function runOnlyImages() {
+  if (state.isRunning) return;
+  const imageNodes = state.nodes.filter(n => ['imagegen', 'upload', 'image'].includes(n.type));
+  if (!imageNodes.length) { showToast('No image nodes'); return; }
+  state.isRunning = true;
+  await Promise.all(imageNodes.map(node => runNode(node, 0, true, true)));
+  state.isRunning = false;
+  showToast('Image nodes complete');
+}
 function syncToolbarState() {
   const hasSelection = state.selectedNodes.size > 0 || !!state.selectedConnection;
   const group = state.selectedGroup ? getGroup(state.selectedGroup) : groupOfNode([...state.selectedNodes][0]);
@@ -1443,6 +1517,10 @@ function setTool(t) { state.activeTool = t; document.querySelectorAll('.tool-btn
 document.getElementById('toolbar-ungroup').addEventListener('click', ungroupSelected);
 document.getElementById('toolbar-tidy').addEventListener('click', tidyUp);
 document.getElementById('toolbar-fit').addEventListener('click', () => fitToContent());
+document.getElementById('toolbar-run-images').addEventListener('click', runOnlyImages);
+document.getElementById('toolbar-download-media').addEventListener('click', () => downloadMedia('media'));
+document.getElementById('toolbar-download-images').addEventListener('click', () => downloadMedia('images'));
+document.getElementById('toolbar-download-videos').addEventListener('click', () => downloadMedia('videos'));
 document.getElementById('toolbar-download').addEventListener('click', downloadProject);
 document.getElementById('toolbar-delete').addEventListener('click', deleteSelection);
 document.getElementById('squiggle-btn').addEventListener('click', () => {
