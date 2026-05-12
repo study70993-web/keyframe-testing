@@ -1527,7 +1527,14 @@ document.addEventListener('mousemove', e => {
       const xFactor = dir.includes('w') ? (state.groupResize.w - dx) / state.groupResize.w : dir.includes('e') ? (state.groupResize.w + dx) / state.groupResize.w : null;
       const yFactor = dir.includes('n') ? (state.groupResize.h - dy) / state.groupResize.h : dir.includes('s') ? (state.groupResize.h + dy) / state.groupResize.h : null;
       const rawFactor = xFactor && yFactor ? Math.min(xFactor, yFactor) : (xFactor || yFactor || 1);
-      const factor = Math.max(0.35, Math.min(2.6, rawFactor));
+      const scaleLimits = state.groupResize.nodes.reduce((limits, node) => {
+        const startScale = node.scale || 1;
+        return {
+          min: Math.max(limits.min, 0.25 / startScale),
+          max: Math.min(limits.max, 3 / startScale)
+        };
+      }, { min: 0.35, max: 2.6 });
+      const factor = Math.max(scaleLimits.min, Math.min(scaleLimits.max, rawFactor));
       const anchorX = dir.includes('w') ? state.groupResize.x + state.groupResize.w : state.groupResize.x;
       const anchorY = dir.includes('n') ? state.groupResize.y + state.groupResize.h : state.groupResize.y;
       g.x = dir.includes('w') ? anchorX - state.groupResize.w * factor : state.groupResize.x;
@@ -1538,7 +1545,7 @@ document.addEventListener('mousemove', e => {
       state.groupResize.nodes.forEach(start => {
         const n = state.nodes.find(node => node.id === start.id);
         if (!n) return;
-        n.scale = Math.max(0.25, Math.min(3, start.scale * factor));
+        n.scale = start.scale * factor;
         moveNode(
           n,
           anchorX + (start.x - anchorX) * factor,
