@@ -1,0 +1,1594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>KEYFRAME Connector Premium</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    @property --ring-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+
+    :root {
+      --bg: #0a0a0c; --surface: #111114; --surface2: #18181d; --surface3: #1e1e25;
+      --border: rgba(255,255,255,0.08); --border-hover: rgba(255,255,255,0.16);
+      --accent: #f5c842; --accent2: #e8b830; --text: #e8e8f0; --text2: #888899;
+      --text3: #555566; --green: #3ddc84; --red: #ff5555; --blue: #4a9eff;
+      --purple: #a855f7; --pink: #ec4899; --node-w: 280px; --radius: 12px;
+      --shadow: 0 8px 32px rgba(0,0,0,0.6);
+    }
+
+    html, body {
+      width: 100%; height: 100%; overflow: hidden; font-family: 'DM Sans', sans-serif;
+      background: var(--bg); color: var(--text); user-select: none;
+    }
+
+    #topbar {
+      position: fixed; top: 0; left: 0; right: 0; height: 52px; z-index: 1000;
+      background: rgba(10,10,12,0.92); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border); display: flex; align-items: center;
+      justify-content: space-between; padding: 0 16px;
+    }
+    #topbar .left, #topbar .right { display: flex; align-items: center; gap: 10px; }
+    #back-btn {
+      width: 32px; height: 32px; border-radius: 8px; background: var(--surface2);
+      border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--text2); transition: all .15s;
+    }
+    #back-btn:hover { border-color: var(--border-hover); color: var(--text); }
+    #title-wrap { display: flex; flex-direction: column; }
+    #title-wrap h1 { font-size: 13px; font-weight: 500; color: var(--text); }
+    #title-wrap span { font-size: 11px; color: var(--text3); font-weight: 300; }
+    #run-all-btn {
+      background: var(--accent); color: #000; border: none; border-radius: 20px;
+      padding: 7px 16px; font-size: 13px; font-weight: 600; display: flex;
+      align-items: center; gap: 6px; cursor: pointer; transition: all .15s;
+      font-family: 'DM Sans', sans-serif;
+    }
+    #run-all-btn:hover { background: var(--accent2); transform: scale(1.02); }
+    #run-all-btn.running { background: var(--surface2); color: var(--text2); cursor: not-allowed; }
+    #run-all-btn svg { width: 12px; height: 12px; }
+
+    .topbar-actions {
+      height: 36px; padding: 3px 6px; border-radius: 16px; border: 1px solid var(--border);
+      background: rgba(17,17,20,.72); display: flex; align-items: center; gap: 4px;
+    }
+    .action-btn {
+      height: 28px; border: 1px solid transparent; border-radius: 9px; background: transparent;
+      color: var(--text2); display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 0 8px; font: 600 12px 'DM Sans', sans-serif; cursor: pointer; transition: all .15s;
+      white-space: nowrap;
+    }
+    .action-btn:hover { background: var(--surface2); border-color: var(--border); color: var(--text); }
+    .action-btn:disabled { opacity: .38; cursor: not-allowed; }
+    .action-btn:disabled:hover { background: transparent; border-color: transparent; color: var(--text2); }
+    .action-btn svg { width: 15px; height: 15px; flex: 0 0 auto; }
+    .action-btn.icon-only { width: 30px; padding: 0; color: var(--text2); }
+    .action-btn.danger:hover { color: var(--red); border-color: rgba(255,85,85,.24); background: rgba(255,85,85,.08); }
+    .toolbar-sep { width: 1px; height: 22px; background: var(--border); margin: 0 3px; }
+
+    #canvas-wrap { position: fixed; top: 52px; left: 0; right: 0; bottom: 44px; overflow: hidden; cursor: default; }
+    #canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform-origin: 0 0; }
+    #dot-grid {
+      position: absolute; inset: -30000px; pointer-events: none;
+      background-image: radial-gradient(circle, rgba(255,255,255,0.10) 1px, transparent 1px);
+      background-size: 24px 24px; transition: opacity .15s ease;
+    }
+    #connections-svg { position: absolute; inset: 0; pointer-events: none; overflow: visible; z-index: 1; }
+
+    .conn-line {
+      fill: none; stroke: rgba(255,255,255,0.62); stroke-width: 1.45; stroke-linecap: round;
+      stroke-linejoin: round; opacity: 0.76; transition: opacity .28s ease, stroke .28s ease, stroke-width .28s ease, filter .28s ease;
+    }
+    .conn-line.active { opacity: 0.92; stroke: rgba(255,255,255,0.86); stroke-width: 1.65; }
+    .conn-hit {
+      fill: none; stroke: transparent; stroke-width: 14; stroke-linecap: round;
+      stroke-linejoin: round; pointer-events: stroke; cursor: pointer;
+    }
+    .conn-line.running {
+      opacity: 1; stroke: var(--accent); stroke-width: 2.35; animation: premium-line-glow 1.05s ease-in-out infinite alternate;
+      filter: drop-shadow(0 0 4px rgba(245,200,66,0.7));
+    }
+    .conn-line.running.calm-running {
+      stroke: rgba(235,238,246,.78); stroke-width: 2.1; animation: calm-line-breathe 1.25s ease-in-out infinite alternate;
+      filter: drop-shadow(0 0 4px rgba(235,238,246,.22));
+    }
+    .conn-line.done { stroke: rgba(245,200,66,0.62); stroke-width: 1.75; opacity: 0.74; }
+    .conn-line.selected {
+      opacity: 1; stroke: var(--blue); stroke-width: 2.4;
+      filter: drop-shadow(0 0 6px rgba(74,158,255,.48));
+    }
+    .conn-line-shadow {
+      fill: none; stroke: rgba(245,200,66,0.16); stroke-width: 8; stroke-linecap: round;
+      stroke-linejoin: round; opacity: 0; pointer-events: none; filter: blur(1px); transition: opacity .25s ease;
+    }
+    .conn-line-shadow.running { opacity: 1; }
+    .conn-line-shadow.running.calm-running {
+      stroke: rgba(235,238,246,.18); opacity: 1; animation: calm-shadow-breathe 1.25s ease-in-out infinite alternate;
+    }
+    .conn-energy-dot { r: 3.6; fill: var(--accent); opacity: 0; filter: drop-shadow(0 0 5px rgba(245,200,66,0.95)); pointer-events: none; }
+    .conn-energy-dot.running { opacity: 1; }
+    .conn-spark { fill: rgba(245,200,66,0.9); opacity: 0; pointer-events: none; filter: drop-shadow(0 0 5px rgba(245,200,66,0.85)); }
+    .conn-spark.running { opacity: 1; }
+    .conn-dot { r: 4; fill: var(--blue); opacity: 0.6; }
+    .conn-dot.active { fill: var(--accent); opacity: 1; }
+    .conn-dot.running { fill: var(--green); opacity: 1; animation: pulse-dot .8s ease-in-out infinite alternate; }
+    @keyframes premium-line-glow {
+      from { filter: drop-shadow(0 0 2px rgba(245,200,66,0.45)); }
+      to { filter: drop-shadow(0 0 8px rgba(245,200,66,0.92)) drop-shadow(0 0 18px rgba(245,200,66,0.32)); }
+    }
+    @keyframes calm-line-breathe {
+      from { opacity: .58; filter: drop-shadow(0 0 2px rgba(235,238,246,.12)); }
+      to { opacity: .96; filter: drop-shadow(0 0 8px rgba(235,238,246,.36)) drop-shadow(0 0 16px rgba(235,238,246,.12)); }
+    }
+    @keyframes calm-shadow-breathe { from { opacity: .12; } to { opacity: .42; } }
+    @keyframes pulse-dot { from { r: 3; opacity: .8; } to { r: 6; opacity: 1; } }
+
+    .group-frame {
+      position: absolute; z-index: 2; border: 1px dashed rgba(74,158,255,.48);
+      background: rgba(74,158,255,.055); border-radius: 12px; pointer-events: auto;
+      cursor: grab; box-shadow: inset 0 0 0 1px rgba(74,158,255,.05);
+    }
+    .group-frame.selected {
+      border-color: rgba(74,158,255,.95); background: rgba(74,158,255,.10);
+      box-shadow: 0 0 0 1px rgba(74,158,255,.22), 0 0 28px rgba(74,158,255,.10);
+    }
+    .group-label {
+      position: absolute; top: -23px; left: 10px; height: 20px; padding: 0 8px;
+      display: flex; align-items: center; border: 1px solid rgba(74,158,255,.35);
+      border-radius: 7px; background: rgba(10,10,12,.92); color: rgba(205,225,255,.9);
+      font-size: 10px; font-weight: 500; white-space: nowrap;
+    }
+    .group-resize-handle {
+      position: absolute; z-index: 240; pointer-events: auto; opacity: 0;
+      border: 0; background: transparent; box-shadow: none;
+    }
+    .group-resize-handle:hover { opacity: 0; }
+    .group-resize-handle.n,
+    .group-resize-handle.s { width: 44px; height: 8px; border-radius: 999px; cursor: ns-resize; }
+    .group-resize-handle.e,
+    .group-resize-handle.w { width: 8px; height: 44px; border-radius: 999px; cursor: ew-resize; }
+    .group-resize-handle.nw,
+    .group-resize-handle.ne,
+    .group-resize-handle.se,
+    .group-resize-handle.sw { width: 14px; height: 14px; border-radius: 4px; }
+    .group-resize-handle.nw,
+    .group-resize-handle.se { cursor: nwse-resize; }
+    .group-resize-handle.ne,
+    .group-resize-handle.sw { cursor: nesw-resize; }
+    #selection-box {
+      position: absolute; z-index: 900; display: none; pointer-events: none;
+      border: 1px solid rgba(74,158,255,.9); background: rgba(74,158,255,.12);
+    }
+
+    .node {
+      --ring-angle: 0deg; position: absolute; width: var(--node-w); background: var(--surface);
+      border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
+      z-index: 10; transition: box-shadow .2s, border-color .2s; cursor: grab;
+      transform-origin: 0 0;
+    }
+    .node:hover { border-color: var(--border-hover); }
+    .node.selected {
+      border-color: rgba(74,158,255,.95);
+      box-shadow: 0 0 0 1px rgba(74,158,255,.45), 0 20px 60px rgba(0,0,0,.72), 0 0 28px rgba(74,158,255,.16);
+    }
+    .node.group-member:not(.selected) { border-color: rgba(74,158,255,.28); }
+    .node.dragging { cursor: grabbing; z-index: 100; box-shadow: 0 20px 60px rgba(0,0,0,0.8); }
+    .node.running {
+      border-color: transparent; background: linear-gradient(var(--surface), var(--surface)) padding-box,
+      conic-gradient(from var(--ring-angle), rgba(255,255,255,.10), rgba(255,255,255,.10) 205deg, rgba(255,255,255,.30) 238deg, rgba(255,255,255,.92) 268deg, rgba(255,255,255,.36) 296deg, rgba(255,255,255,.10) 330deg, rgba(255,255,255,.10)) border-box;
+      animation: node-pulse 1s ease-in-out infinite alternate, border-circuit 1.08s linear infinite;
+    }
+    .node.done { border-color: rgba(245,200,66,.4); }
+    @keyframes node-pulse { from { box-shadow: var(--shadow); } to { box-shadow: 0 0 26px rgba(255,255,255,.075), var(--shadow); } }
+    @keyframes border-circuit { to { --ring-angle: 360deg; } }
+
+    .node-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); cursor: grab; }
+    .node-header:active { cursor: grabbing; }
+    .node-icon { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+    .node-title { font-size: 12px; font-weight: 500; color: var(--text2); flex: 1; }
+    .node-port-out {
+      width: 20px; height: 20px; border-radius: 50%; background: var(--surface3); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center; cursor: crosshair; transition: all .15s; flex-shrink: 0;
+    }
+    .node-port-out:hover { border-color: var(--blue); background: rgba(74,158,255,.15); }
+    .node-port-out svg { width: 8px; height: 8px; color: var(--text3); }
+    .node-body { padding: 12px; }
+    .img-thumb { width: 100%; aspect-ratio: 16/10; border-radius: 8px; overflow: hidden; background: var(--surface2); position: relative; }
+    .img-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .img-thumb .img-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .2s; }
+    .img-thumb:hover .img-overlay { opacity: 1; }
+    .img-overlay button { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: white; padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+    .ratio-row { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+    .ratio-btn {
+      background: var(--surface2); border: 1px solid var(--border); color: var(--text2); padding: 3px 8px;
+      border-radius: 5px; font-size: 10px; font-family: 'DM Mono', monospace; cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .ratio-btn:hover { border-color: var(--border-hover); color: var(--text); }
+    .ratio-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(245,200,66,.08); }
+    .prompt-textarea, .video-prompt-box {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); font-size: 11.5px; font-family: 'DM Sans', sans-serif; padding: 10px;
+      resize: vertical; line-height: 1.5; transition: border-color .15s; outline: none;
+    }
+    .prompt-textarea { min-height: 90px; }
+    .prompt-textarea:focus, .video-prompt-box:focus { border-color: rgba(74,158,255,.4); }
+    .sticky-node {
+      width: 260px; min-height: 170px; background: #fff4bd; border-color: rgba(245,200,66,.72);
+      box-shadow: 0 18px 48px rgba(0,0,0,.38), 0 0 0 1px rgba(245,200,66,.22);
+    }
+    .sticky-node.selected {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 1px rgba(74,158,255,.8), 0 18px 48px rgba(0,0,0,.38), 0 0 22px rgba(74,158,255,.22);
+    }
+    .sticky-node .node-header {
+      min-height: 24px; padding: 0; border-bottom: 0; background: transparent;
+      cursor: grab;
+    }
+    .sticky-node .node-body { padding: 12px; }
+    .sticky-textarea {
+      width: 100%; min-height: 140px; resize: none; overflow: hidden; border: 0; outline: none; background: transparent;
+      color: #15130b; font: 400 18px 'DM Sans', sans-serif; line-height: 1.42; padding: 0;
+    }
+    .sticky-textarea::placeholder { color: rgba(21,19,11,.36); }
+    .video-node { min-width: 330px; max-width: 560px; }
+    .video-node .node-body { position: relative; padding: 10px; }
+    .video-preview {
+      width: 100%; aspect-ratio: 16/9; background: var(--surface2); border-radius: 9px;
+      display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;
+      margin-bottom: 8px; border: 1px solid rgba(255,255,255,.055);
+    }
+    .empty-state { display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--text3); }
+    .empty-state svg { width: 28px; height: 28px; opacity: .42; }
+    .empty-state span { font-size: 11px; }
+    .stale-badge { position: absolute; bottom: 8px; left: 8px; background: rgba(255,85,85,.16); border: 1px solid rgba(255,85,85,.28); color: var(--red); font-size: 10px; padding: 2px 7px; border-radius: 5px; }
+    .video-control-row, .image-chip-row, .prompt-chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .api-pill, .chip-btn {
+      min-height: 26px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface2);
+      color: var(--text2); font-size: 11px; font-family: 'DM Sans', sans-serif; display: inline-flex;
+      align-items: center; justify-content: center; gap: 5px; white-space: nowrap; transition: border-color .15s, color .15s, background .15s;
+    }
+    .api-pill:hover, .chip-btn:hover { border-color: var(--border-hover); color: var(--text); }
+    .api-pill { flex: 1 1 66px; min-width: 64px; padding: 0 8px; position: relative; }
+    .api-pill.wide { flex-basis: 118px; min-width: 112px; }
+    .api-pill span { color: var(--text3); font-size: 9px; letter-spacing: .03em; text-transform: uppercase; flex-shrink: 0; }
+    .api-pill select, .field-select.compact-select { width: 100%; min-width: 0; background: transparent; border: 0; outline: none; color: var(--text); font-size: 11px; font-family: 'DM Sans', sans-serif; appearance: none; cursor: pointer; padding: 0 12px 0 0; }
+    .api-pill::after { content: ''; position: absolute; right: 8px; top: 50%; width: 6px; height: 6px; border-right: 1px solid var(--text3); border-bottom: 1px solid var(--text3); transform: translateY(-65%) rotate(45deg); pointer-events: none; }
+    .chip-btn { border: 0; cursor: pointer; padding: 0 10px; flex: 1 1 auto; min-width: 72px; }
+    .chip-btn.image-chip { background: rgba(61,220,132,.10); border: 1px solid rgba(61,220,132,.20); color: rgba(232,232,240,.82); }
+    .chip-btn.prompt-chip { background: rgba(74,158,255,.10); border: 1px solid rgba(74,158,255,.20); color: rgba(232,232,240,.82); }
+    .chip-btn.active { border-color: rgba(245,200,66,.45); color: var(--accent); background: rgba(245,200,66,.09); }
+    .chip-btn.is-muted { opacity: .64; }
+    .chip-btn.small { flex: 0 1 auto; min-width: 68px; font-size: 10px; }
+    .video-prompt-box { min-height: 112px; max-height: 260px; margin-bottom: 8px; }
+    .video-footer-row { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 8px; padding-right: 14px; }
+    .mute-pill {
+      height: 28px; min-width: 48px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--surface2); display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      color: var(--text2); font-size: 10px; cursor: pointer;
+    }
+    .mute-pill .toggle { width: 22px; height: 14px; background: var(--surface3); border-radius: 999px; position: relative; border: 1px solid var(--border); transition: background .2s, border-color .2s; }
+    .mute-pill .toggle::after { content: ''; position: absolute; width: 8px; height: 8px; border-radius: 50%; background: white; top: 2px; left: 2px; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+    .mute-pill .toggle.on { background: var(--accent); border-color: var(--accent); }
+    .mute-pill .toggle.on::after { transform: translateX(8px); }
+    .gen-btn {
+      width: 100%; padding: 9px; background: var(--accent); border: none; border-radius: 8px; color: #000;
+      font-weight: 600; font-size: 12px; font-family: 'DM Sans', sans-serif; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px; transition: all .15s; margin-top: 0;
+    }
+    .gen-btn:hover { background: var(--accent2); transform: scale(1.01); }
+    .gen-btn.running { background: var(--surface2); color: var(--text2); cursor: not-allowed; transform: none; }
+    .gen-btn .cost { font-size: 10px; opacity: .8; font-family: 'DM Mono', monospace; }
+    .node-resize-handle {
+      position: absolute; right: 5px; bottom: 5px; width: 14px; height: 14px; cursor: nwse-resize; opacity: .55;
+      background: linear-gradient(135deg, transparent 0 50%, rgba(255,255,255,.25) 50% 58%, transparent 58% 100%), linear-gradient(135deg, transparent 0 68%, rgba(255,255,255,.18) 68% 76%, transparent 76% 100%);
+      border-radius: 3px;
+    }
+    .node-resize-handle:hover { opacity: .9; }
+    .node-ports-left { position: absolute; left: -20px; top: 64px; display: flex; flex-direction: column; gap: 48px; z-index: 3; }
+    .port-left {
+      width: 20px; height: 20px; border-radius: 50%; background: var(--surface3); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center; cursor: crosshair; transition: all .15s; position: relative;
+    }
+    .port-left:hover { border-color: var(--blue); background: rgba(74,158,255,.1); }
+    .port-left .port-label { position: absolute; right: 26px; top: 50%; transform: translateY(-50%); font-size: 9px; color: var(--text3); white-space: nowrap; font-family: 'DM Mono', monospace; pointer-events: none; }
+
+    #bottombar {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 44px; z-index: 1000;
+      background: rgba(10,10,12,.9); backdrop-filter: blur(20px); border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center; gap: 4px;
+    }
+    .tool-btn {
+      width: 36px; height: 36px; border-radius: 9px; background: transparent; border: 1px solid transparent;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text2);
+      transition: all .15s; position: relative;
+    }
+    .tool-btn:hover { background: var(--surface2); border-color: var(--border); color: var(--text); }
+    .tool-btn.active { background: var(--surface2); border-color: var(--border-hover); color: var(--text); }
+    .tool-btn svg { width: 16px; height: 16px; }
+    #add-node-btn {
+      display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 9px;
+      background: var(--surface2); border: 1px solid var(--border); color: var(--text2); font-size: 12px;
+      font-weight: 500; cursor: pointer; transition: all .15s; font-family: 'DM Sans', sans-serif;
+    }
+    #add-node-btn:hover { border-color: var(--border-hover); color: var(--text); }
+    #squiggle-btn {
+      display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 9px;
+      background: rgba(245,200,66,.08); border: 1px solid rgba(245,200,66,.28);
+      color: var(--accent); font-size: 12px; font-weight: 500; cursor: pointer;
+      transition: all .15s; font-family: 'DM Sans', sans-serif;
+    }
+    #squiggle-btn:hover { border-color: rgba(245,200,66,.48); color: #ffe28b; }
+    #squiggle-btn.off {
+      background: var(--surface2); border-color: var(--border); color: var(--text2);
+    }
+    #zoom-controls { position: fixed; bottom: 56px; left: 16px; display: flex; flex-direction: column; gap: 2px; z-index: 1000; }
+    .zoom-btn {
+      width: 28px; height: 28px; border-radius: 7px; background: var(--surface); border: 1px solid var(--border);
+      color: var(--text2); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; transition: all .15s;
+    }
+    .zoom-btn:hover { border-color: var(--border-hover); color: var(--text); }
+    #ctx-menu {
+      position: fixed; z-index: 2000; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 6px; box-shadow: 0 16px 48px rgba(0,0,0,.7); width: 228px; display: none;
+      max-height: min(430px, calc(100vh - 20px)); overflow: hidden;
+    }
+    #ctx-menu.visible { display: block; animation: menu-in .12s ease-out; }
+    @keyframes menu-in { from { opacity: 0; transform: scale(.95) translateY(-4px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    .ctx-search-wrap { position: relative; margin-bottom: 6px; }
+    .ctx-search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 13px; height: 13px; color: var(--text3); pointer-events: none; }
+    #ctx-search {
+      width: 100%; height: 32px; padding: 0 10px 0 28px; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--surface2); color: var(--text);
+      outline: none; font: 12px 'DM Sans', sans-serif;
+    }
+    #ctx-search:focus { border-color: rgba(74,158,255,.42); }
+    #ctx-list { max-height: min(380px, calc(100vh - 72px)); overflow-y: auto; overscroll-behavior: contain; padding-right: 2px; }
+    .ctx-section { padding: 4px 8px 2px; font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; font-weight: 500; }
+    .ctx-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 7px; cursor: pointer; font-size: 12px; color: var(--text2); transition: all .12s; }
+    .ctx-item:hover { background: var(--surface2); color: var(--text); }
+    .ctx-item.disabled { opacity: .38; pointer-events: none; }
+    .ctx-hidden { display: none !important; }
+    .ctx-item .ctx-icon { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ctx-sep { height: 1px; background: var(--border); margin: 4px 0; }
+    .node-progress { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; border-radius: 0 0 var(--radius) var(--radius); background: var(--surface3); overflow: hidden; }
+    .node-progress-bar { height: 100%; background: var(--green); border-radius: inherit; transition: width .3s ease; box-shadow: 0 0 8px var(--green); }
+    #toast {
+      position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--surface); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px;
+      font-size: 12px; color: var(--text2); z-index: 3000; opacity: 0; transition: all .3s; pointer-events: none; white-space: nowrap;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 2px; }
+  </style>
+</head>
+<body>
+<div id="topbar">
+  <div class="left">
+    <button id="back-btn" title="Back">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg>
+    </button>
+    <div id="title-wrap"><h1 id="project-title">Untitled</h1><span id="save-status">Saved</span></div>
+  </div>
+  <div class="right">
+    <div class="topbar-actions">
+      <button class="action-btn" id="toolbar-ungroup" title="Ungroup selected group">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="4" height="4" rx="1"/><rect x="9.5" y="9.5" width="4" height="4" rx="1"/><path d="M8 4.5h1.5M6.5 8v1.5"/></svg>
+        Ungroup
+      </button>
+      <button class="action-btn" id="toolbar-tidy" title="Tidy up nodes">
+        <svg viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+        Tidy up
+      </button>
+      <button class="action-btn" id="toolbar-fit" title="Fit to view">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2H2v4M10 2h4v4M6 14H2v-4M10 14h4v-4"/><path d="M5 5l-3-3M11 5l3-3M5 11l-3 3M11 11l3 3"/></svg>
+        Fit
+      </button>
+      <div class="toolbar-sep"></div>
+      <button class="action-btn icon-only" id="toolbar-download" title="Download project JSON">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8"/><path d="M4.5 6.5L8 10l3.5-3.5"/><path d="M3 13h10"/></svg>
+      </button>
+      <button class="action-btn icon-only danger" id="toolbar-delete" title="Delete selected">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4h11"/><path d="M6 4V2.5h4V4"/><path d="M4.2 4l.5 9h6.6l.5-9"/><path d="M6.8 6.5v4.5M9.2 6.5v4.5"/></svg>
+      </button>
+    </div>
+    <button id="run-all-btn"><svg viewBox="0 0 12 12" fill="currentColor"><path d="M2 1.5l8 4.5-8 4.5z"/></svg>Run all</button>
+  </div>
+</div>
+
+<div id="canvas-wrap">
+  <div id="canvas">
+    <div id="dot-grid"></div>
+    <svg id="connections-svg"></svg>
+    <div id="selection-box"></div>
+  </div>
+</div>
+
+<div id="zoom-controls">
+  <button class="zoom-btn" id="zoom-in">+</button>
+  <button class="zoom-btn" id="zoom-out">−</button>
+  <button class="zoom-btn" id="zoom-fit" title="Fit" style="font-size:11px;">⊡</button>
+</div>
+
+<div id="bottombar">
+  <button class="tool-btn active" id="tool-select" title="Select">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2l10 5.5-4.5 1L6 13z"/></svg>
+  </button>
+  <button class="tool-btn" id="tool-pan" title="Pan">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v12M2 8h12M5 5l-3 3 3 3M11 5l3 3-3 3"/></svg>
+  </button>
+  <div style="width:1px;height:24px;background:var(--border);margin:0 4px;"></div>
+  <button id="add-node-btn">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 1v10M1 6h10"/></svg>Add Node
+  </button>
+  <button id="squiggle-btn" title="Toggle running connection squiggle">Squiggle</button>
+</div>
+
+<div id="ctx-menu">
+  <div class="ctx-search-wrap">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>
+    <input id="ctx-search" type="search" placeholder="Search" autocomplete="off" />
+  </div>
+  <div id="ctx-list">
+  <div class="ctx-section">Selection</div>
+  <div class="ctx-item" data-action="group"><div class="ctx-icon" style="background:rgba(74,158,255,0.15);color:#4a9eff">▣</div>Make Group</div>
+  <div class="ctx-item" data-action="select-group"><div class="ctx-icon" style="background:rgba(74,158,255,0.15);color:#4a9eff">⊡</div>Select Group</div>
+  <div class="ctx-item" data-action="ungroup"><div class="ctx-icon" style="background:rgba(255,85,85,0.12);color:#ff5555">⌫</div>Ungroup</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-section">Add Node</div>
+  <div class="ctx-item" data-type="prompt"><div class="ctx-icon" style="background:rgba(168,85,247,0.15);"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#a855f7" stroke-width="1.8" stroke-linecap="round"><path d="M2 4h12M2 8h8M2 12h5"/></svg></div>Prompt</div>
+  <div class="ctx-item" data-type="imagegen"><div class="ctx-icon" style="background:rgba(74,158,255,0.15);"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#4a9eff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="12" height="10" rx="2"/><circle cx="6" cy="7" r="1.2"/><path d="M2 11l3.5-3 3 3 2-2 3.5 3"/></svg></div>Image Generator</div>
+  <div class="ctx-item" data-type="videogen"><div class="ctx-icon" style="background:rgba(61,220,132,0.15);"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#3ddc84" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h8v8H2zM10 6l4-2v8l-4-2z"/></svg></div>Video Generator</div>
+  <div class="ctx-item" data-type="voicegen"><div class="ctx-icon" style="background:rgba(236,72,153,0.15);"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#ec4899" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8M5 4v4M11 4v4M2 10c1.5 2.5 10 2.5 12 0"/></svg></div>Voice Generator</div>
+  <div class="ctx-item" data-type="llm"><div class="ctx-icon" style="background:rgba(245,200,66,0.15);"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#f5c842" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M6 8h4M8 6v4"/></svg></div>LLM Assistant</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-section">References</div>
+  <div class="ctx-item" data-type="upload"><div class="ctx-icon" style="background:rgba(61,220,132,0.15);"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#3ddc84" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10V4M5 7l3-3 3 3"/><path d="M3 13h10"/></svg></div>Upload</div>
+  <div class="ctx-item" data-type="assets"><div class="ctx-icon" style="background:rgba(61,220,132,0.15);"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#3ddc84" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg></div>Assets</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-section">Audio</div>
+  <div class="ctx-item" data-type="voiceover"><div class="ctx-icon" style="background:rgba(236,72,153,0.15);"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#ec4899" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8M5 4v4M11 4v4M2 10c1.5 2.5 10 2.5 12 0"/></svg></div>Voiceover</div>
+  <div class="ctx-item" data-type="changevoice"><div class="ctx-icon" style="background:rgba(236,72,153,0.15);"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#ec4899" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8c0-2.8 2.2-5 5-5s5 2.2 5 5-2.2 5-5 5"/><path d="M8 6v4M6 8h4"/></svg></div>Change Voice</div>
+  <div class="ctx-item" data-type="translate"><div class="ctx-icon" style="background:rgba(236,72,153,0.15);"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#ec4899" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h7M6 2v2M9 4c-.5 2-2 4-4 5M7 8c1 1 2.5 2 4 2"/><path d="M9 10l5 4M11 10h3v3"/></svg></div>Translate</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-section">Utilities</div>
+  <div class="ctx-item" data-type="text"><div class="ctx-icon" style="background:rgba(255,255,255,0.08);"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#aaa" stroke-width="1.8" stroke-linecap="round"><path d="M3 4h10M3 8h7M3 12h5"/></svg></div>Text</div>
+  <div class="ctx-item" data-type="stickynote"><div class="ctx-icon" style="background:rgba(245,200,66,0.15);"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#f5c842" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2h10v9l-4 3H3z"/><path d="M9 11v3M9 11h4"/></svg></div>Sticky Note</div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+const state = {
+  nodes: [], connections: [], groups: [], nextId: 1, nextGroupId: 1,
+  scale: 1, panX: 0, panY: 0, isPanning: false, spacePanActive: false, panStart: null,
+  draggingNode: null, dragOffsetX: 0, dragOffsetY: 0, dragStart: null,
+  activeTool: 'select', isRunning: false, connectingFrom: null,
+  selectedNodes: new Set(), selectedGroup: null, selectedConnection: null, marquee: null, groupDrag: null,
+  groupResize: null, undoStack: [], redoStack: [], clipboard: null, restoring: false, squiggle: true
+};
+
+const canvas = document.getElementById('canvas');
+const canvasWrap = document.getElementById('canvas-wrap');
+const svg = document.getElementById('connections-svg');
+const selectionBox = document.getElementById('selection-box');
+const MIN_ZOOM = 0.08;
+const MAX_ZOOM = 3;
+
+function uid() { return 'n' + (state.nextId++); }
+function gid() { return 'g' + (state.nextGroupId++); }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(showToast.timer); showToast.timer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+function snapshotState() {
+  return {
+    nodes: state.nodes.map(n => ({
+      id: n.id, type: n.type, x: n.x, y: n.y, scale: n.scale || 1,
+      data: JSON.parse(JSON.stringify(n.data || {})), groupId: n.groupId || null,
+      width: n.el?.style.width || '', minHeight: n.el?.style.minHeight || ''
+    })),
+    connections: state.connections.map(c => ({ ...c })),
+    groups: state.groups.map(g => ({
+      id: g.id, name: g.name, nodeIds: [...g.nodeIds], x: g.x, y: g.y, w: g.w, h: g.h,
+      manualSize: !!g.manualSize
+    })),
+    nextId: state.nextId,
+    nextGroupId: state.nextGroupId,
+    selectedNodes: [...state.selectedNodes],
+    selectedGroup: state.selectedGroup,
+    selectedConnection: state.selectedConnection
+  };
+}
+function pushHistory() {
+  if (state.restoring) return;
+  state.undoStack.push(snapshotState());
+  if (state.undoStack.length > 80) state.undoStack.shift();
+  state.redoStack = [];
+}
+function restoreSnapshot(snap) {
+  state.restoring = true;
+  state.nodes.forEach(n => n.el?.remove());
+  state.groups.forEach(g => { g.el?.remove(); g.handles?.forEach(h => h.remove()); });
+  svg.querySelectorAll('.conn-group').forEach(g => g.remove());
+  state.nodes = [];
+  state.groups = [];
+  state.connections = snap.connections.map(c => ({ ...c }));
+  state.nextId = snap.nextId;
+  state.nextGroupId = snap.nextGroupId;
+  snap.nodes.forEach(saved => {
+    const n = createNode(saved.type, saved.x, saved.y);
+    n.id = saved.id;
+    n.el.id = saved.id;
+    n.data = JSON.parse(JSON.stringify(saved.data || {}));
+    n.scale = saved.scale || 1;
+    n.groupId = saved.groupId || null;
+    if (saved.width) n.el.style.width = saved.width;
+    if (saved.minHeight) n.el.style.minHeight = saved.minHeight;
+    applyNodeScale(n);
+  });
+  state.groups = [];
+  snap.groups.forEach(saved => createGroupFromData(saved));
+  state.selectedNodes = new Set(snap.selectedNodes || []);
+  state.selectedGroup = snap.selectedGroup || null;
+  state.selectedConnection = snap.selectedConnection || null;
+  state.restoring = false;
+  syncSelectionUI();
+  renderConnections();
+  refreshAllVideoInputChips();
+}
+function undo() {
+  if (!state.undoStack.length) return;
+  state.redoStack.push(snapshotState());
+  restoreSnapshot(state.undoStack.pop());
+}
+function redo() {
+  if (!state.redoStack.length) return;
+  state.undoStack.push(snapshotState());
+  restoreSnapshot(state.redoStack.pop());
+}
+function applyTransform() {
+  canvas.style.transform = `translate(${state.panX}px, ${state.panY}px) scale(${state.scale})`;
+  canvas.style.transformOrigin = '0 0';
+  updateDotGrid();
+}
+function updateDotGrid() {
+  const grid = document.getElementById('dot-grid');
+  const size = 24 * state.scale;
+  const opacity = state.scale < 0.14 ? 0 : Math.min(1, (state.scale - 0.14) / 0.18);
+  grid.style.backgroundSize = `${size}px ${size}px`;
+  grid.style.backgroundPosition = `${state.panX % size}px ${state.panY % size}px`;
+  grid.style.opacity = opacity.toFixed(3);
+}
+function screenToCanvas(sx, sy) {
+  const rect = canvasWrap.getBoundingClientRect();
+  return { x: (sx - rect.left - state.panX) / state.scale, y: (sy - rect.top - state.panY) / state.scale };
+}
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+const NODE_TYPES = {
+  prompt: { title: 'Prompt', iconBg: 'rgba(168,85,247,0.2)', iconColor: '#a855f7', iconSvg: `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4h12M2 8h8M2 12h5"/></svg>`, defaultData: { text: 'Create a cinematic video by using Image 1 as the starting frame and Image 2 as the visual outcome reference. Keep the exact same claymation miniature world, same fisherman character, same outfit, same orange beanie, blue jacket, brown pants, green boots, fishing rod, snowy pine forest, cracked frozen lake, bucket of fish, wooden stump, lighting, colors, and handcrafted toy-like texture.' } },
+  image: { title: 'Image', iconBg: 'rgba(74,158,255,0.2)', iconColor: '#4a9eff', iconSvg: `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="12" height="10" rx="2"/><circle cx="6" cy="7" r="1.2"/><path d="M2 11l3.5-3 3 3 2-2 3.5 3"/></svg>`, defaultData: { src: null, ratio: '16:9' } },
+  videogen: { title: 'Video Gen', iconBg: 'rgba(61,220,132,0.2)', iconColor: '#3ddc84', iconSvg: `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h8v8H2zM10 6l4-2v8l-4-2z"/></svg>`, defaultData: { model: 'Kling 3.0 4K', duration: '8', ratio: 'auto', resolution: '720p', quality: 'Standard', audio: true, muted: false, stale: true, promptText: '' }, width: 360 },
+  voiceover: { title: 'Voiceover', iconBg: 'rgba(236,72,153,0.2)', iconColor: '#ec4899', iconSvg: `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8M5 4v4M11 4v4M2 10c1.5 2.5 10 2.5 12 0"/></svg>`, defaultData: { text: '' } },
+  llm: { title: 'LLM Assistant', iconBg: 'rgba(245,200,66,0.2)', iconColor: '#f5c842', iconSvg: `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M6 8h4M8 6v4"/></svg>`, defaultData: { text: '' } },
+  imagegen: { title: 'Image Generator', iconBg: 'rgba(74,158,255,0.2)', iconColor: '#4a9eff', iconSvg: `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="12" height="10" rx="2"/><circle cx="6" cy="7" r="1.2"/><path d="M2 11l3.5-3 3 3 2-2 3.5 3"/></svg>`, defaultData: { text: '', ratio: '16:9' } },
+  voicegen: { title: 'Voice Generator', iconBg: 'rgba(236,72,153,0.2)', iconColor: '#ec4899', iconSvg: `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8M5 4v4M11 4v4M2 10c1.5 2.5 10 2.5 12 0"/></svg>`, defaultData: { text: '' } },
+  upload: { title: 'Upload', iconBg: 'rgba(61,220,132,0.2)', iconColor: '#3ddc84', iconSvg: `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10V4M5 7l3-3 3 3"/><path d="M3 13h10"/></svg>`, defaultData: { src: null, ratio: '16:9' } },
+  assets: { title: 'Assets', iconBg: 'rgba(61,220,132,0.2)', iconColor: '#3ddc84', iconSvg: `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>`, defaultData: { text: '' } },
+  changevoice: { title: 'Change Voice', iconBg: 'rgba(236,72,153,0.2)', iconColor: '#ec4899', iconSvg: `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8c0-2.8 2.2-5 5-5s5 2.2 5 5-2.2 5-5 5"/><path d="M8 6v4M6 8h4"/></svg>`, defaultData: { text: '' } },
+  translate: { title: 'Translate', iconBg: 'rgba(236,72,153,0.2)', iconColor: '#ec4899', iconSvg: `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h7M6 2v2M9 4c-.5 2-2 4-4 5M7 8c1 1 2.5 2 4 2"/><path d="M9 10l5 4M11 10h3v3"/></svg>`, defaultData: { text: '' } },
+  text: { title: 'Text', iconBg: 'rgba(255,255,255,0.12)', iconColor: '#aaa', iconSvg: `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 4h10M3 8h7M3 12h5"/></svg>`, defaultData: { text: '' } },
+  stickynote: { title: 'Sticky Note', iconBg: 'rgba(245,200,66,0.2)', iconColor: '#f5c842', iconSvg: `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2h10v9l-4 3H3z"/><path d="M9 11v3M9 11h4"/></svg>`, defaultData: { text: '' } }
+};
+const MODELS = ['Kling 2.6 Text-to-Video','Kling 2.5 Turbo','Kling 2.6','Veo 3.1 Fast','SeeDance Lite','Seedance 2 Fast','Seedance 2','Happy Horse','Sora 2','Grok Imagine Video','Grok Imagine Video (T2V)','Kling 3.0','Kling 3.0 Pro','Kling 3.0 4K','Wan 2.7'];
+const RATIOS = ['1:1','4:3','3:4','16:9','9:16','21:9','auto'];
+
+function createNode(type, x, y) {
+  const def = NODE_TYPES[type];
+  if (!def) return;
+  const id = uid();
+  const data = JSON.parse(JSON.stringify(def.defaultData));
+  const nodeObj = { id, type, x, y, scale: 1, data, el: null, groupId: null };
+  state.nodes.push(nodeObj);
+  const el = document.createElement('div');
+  el.className = type === 'videogen' ? 'node video-node' : type === 'stickynote' ? 'node sticky-node' : 'node';
+  el.id = id;
+  if (def.width) el.style.width = def.width + 'px';
+  el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.position = 'absolute';
+  el.innerHTML = buildNodeHTML(type, id, data, def);
+  canvas.appendChild(el);
+  nodeObj.el = el;
+  attachNodeEvents(el, nodeObj);
+  return nodeObj;
+}
+
+function getConnectedInputNodes(videoNodeId, typeFilter = null) {
+  return state.connections.filter(c => c.to === videoNodeId).map(c => state.nodes.find(n => n.id === c.from)).filter(Boolean).filter(n => !typeFilter || n.type === typeFilter || (typeFilter === 'image' && ['upload','imagegen'].includes(n.type)));
+}
+function buildVideoImageChips(videoNodeId) {
+  const images = getConnectedInputNodes(videoNodeId, 'image');
+  if (!images.length) return `<button class="chip-btn image-chip active" type="button">image input</button><button class="chip-btn image-chip" type="button">thumb + preview</button><button class="chip-btn image-chip is-muted" type="button">image name</button>`;
+  return images.map((img, index) => `<button class="chip-btn image-chip active" type="button">Image ${index + 1}</button><button class="chip-btn image-chip" type="button">thumb + preview</button><button class="chip-btn image-chip is-muted" type="button">${esc(img.data?.name || img.data?.ratio || 'image name')}</button>`).join('');
+}
+function refreshVideoInputChips(videoNodeId) {
+  const row = document.getElementById('image-chip-row-' + videoNodeId);
+  if (row) row.innerHTML = buildVideoImageChips(videoNodeId);
+}
+function refreshAllVideoInputChips() { state.nodes.filter(n => n.type === 'videogen').forEach(n => refreshVideoInputChips(n.id)); }
+
+function buildNodeHTML(type, id, data, def) {
+  if (type === 'stickynote') {
+    return `<div class="node-header"></div><div class="node-body"><textarea class="sticky-textarea" data-node="${id}" placeholder="Add text">${esc(data.text || '')}</textarea></div>`;
+  }
+  const header = `<div class="node-header"><div class="node-icon" style="background:${def.iconBg};color:${def.iconColor}">${def.iconSvg}</div><span class="node-title">${def.title}</span><div class="node-port-out" data-node="${id}" data-port="out"><svg viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 4h4M4 2l2 2-2 2"/></svg></div></div>`;
+  if (type === 'prompt') return header + `<div class="node-body"><textarea class="prompt-textarea" data-node="${id}" placeholder="Write your prompt...">${esc(data.text)}</textarea></div>`;
+  if (type === 'image' || type === 'upload') {
+    const ratioHTML = RATIOS.map(r => `<button class="ratio-btn${r === data.ratio ? ' active' : ''}" data-ratio="${r}" data-node="${id}">${r}</button>`).join('');
+    return header + `<div class="node-body"><div class="img-thumb">${data.src ? `<img src="${data.src}" alt=""/>` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);flex-direction:column;gap:6px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="10" r="1.5"/><path d="M3 16l5-5 4 4 3-3 6 6"/></svg><span style="font-size:10px">Upload image</span></div>`}<div class="img-overlay"><button onclick="replaceImage('${id}')">Replace image</button></div></div><div class="ratio-row">${ratioHTML}</div></div>`;
+  }
+  if (type === 'videogen') {
+    const modelOpts = MODELS.map(m => `<option${m === data.model ? ' selected' : ''}>${m}</option>`).join('');
+    const ratioOpts = RATIOS.map(r => `<option${r === data.ratio ? ' selected' : ''}>${r}</option>`).join('');
+    return header + `<div class="node-body video-gen-body"><div class="node-ports-left" id="ports-${id}"><div class="port-left" data-node="${id}" data-port="prompt"><span class="port-label">T</span></div><div class="port-left" data-node="${id}" data-port="img1"><span class="port-label">E</span></div><div class="port-left" data-node="${id}" data-port="img2"><span class="port-label">I</span></div><div class="port-left" data-node="${id}" data-port="ref"><span class="port-label">⊡</span></div></div>
+    <div class="video-preview" id="vp-${id}"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M5 4h10v10H5zM15 8l4-2v8l-4-2z"/></svg><span>Image/video preview</span></div>${data.stale ? '<div class="stale-badge">Stale</div>' : ''}</div>
+    <div class="video-control-row"><label class="api-pill wide"><span>Model</span><select class="field-select compact-select" data-node="${id}" data-field="model">${modelOpts}</select></label><label class="api-pill"><span>AR</span><select class="field-select compact-select" data-node="${id}" data-field="ratio">${ratioOpts}</select></label><label class="api-pill"><span>Res</span><select class="field-select compact-select" data-node="${id}" data-field="resolution"><option>480p</option><option${data.resolution==='720p'?' selected':''}>720p</option><option>1080p</option><option>4K</option></select></label><label class="api-pill"><span>Quality</span><select class="field-select compact-select" data-node="${id}" data-field="quality"><option>Draft</option><option${data.quality==='Standard'?' selected':''}>Standard</option><option>High</option><option>Ultra</option></select></label><label class="api-pill"><span>Dur</span><select class="field-select compact-select" data-node="${id}" data-field="duration"><option value="4">4s</option><option value="8"${data.duration==='8'?' selected':''}>8s</option><option value="16">16s</option></select></label></div>
+    <div class="image-chip-row" id="image-chip-row-${id}">${buildVideoImageChips(id)}</div><div class="prompt-chip-row"><button class="chip-btn prompt-chip active" type="button" data-node="${id}" data-field="promptMode" data-value="order">prompt order</button><button class="chip-btn prompt-chip" type="button" data-node="${id}" data-field="promptMode" data-value="preview">preview</button><button class="chip-btn prompt-chip small" type="button" data-node="${id}" data-field="promptMode" data-value="first_words">just first few words</button></div>
+    <textarea class="video-prompt-box" data-node="${id}" data-field="promptText" placeholder="Text box / generation instructions...">${esc(data.promptText || '')}</textarea><div class="video-footer-row"><div class="mute-pill" title="Mute audio"><span>mute</span><div class="toggle${data.muted?' on':''}" data-node="${id}" data-field="muted"></div></div><button class="gen-btn" data-node="${id}" data-action="generate"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M1 1.5l7 3.5-7 3.5z"/></svg>Generate<span class="cost">⚡ 483</span></button></div><div class="node-resize-handle" title="Resize node"></div><div class="node-progress"><div class="node-progress-bar" style="width:0%" id="prog-${id}"></div></div></div>`;
+  }
+  if (type === 'voiceover' || type === 'llm') return header + `<div class="node-body"><textarea class="prompt-textarea" data-node="${id}" placeholder="${type==='llm'?'Ask anything...':'Add voiceover text...'}" style="min-height:70px">${esc(data.text)}</textarea><button class="gen-btn" data-node="${id}" data-action="generate" style="margin-top:8px;"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M1 1.5l7 3.5-7 3.5z"/></svg>Generate<span class="cost">⚡ ${type==='llm'?'10':'50'}</span></button></div>`;
+  const placeholderMap = { imagegen:'Describe the image you want to generate...', voicegen:'Write the voice generation text...', assets:'Search or describe assets...', changevoice:'Add text/audio notes for voice change...', translate:'Paste text to translate...', text:'Write text...', stickynote:'Write a note...' };
+  const costMap = { imagegen:'120', voicegen:'50', assets:'0', changevoice:'70', translate:'20', text:'0', stickynote:'0' };
+  return header + `<div class="node-body"><textarea class="prompt-textarea" data-node="${id}" placeholder="${placeholderMap[type] || 'Write here...'}" style="min-height:${type === 'stickynote' ? '110px' : '80px'}">${esc(data.text || '')}</textarea>${type === 'imagegen' ? `<div class="ratio-row">${RATIOS.map(r => `<button class="ratio-btn${r === (data.ratio || '16:9') ? ' active' : ''}" data-ratio="${r}" data-node="${id}">${r}</button>`).join('')}</div>` : ''}${type !== 'text' && type !== 'stickynote' ? `<button class="gen-btn" data-node="${id}" data-action="generate" style="margin-top:8px;"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M1 1.5l7 3.5-7 3.5z"/></svg>Generate<span class="cost">⚡ ${costMap[type] || '0'}</span></button><div class="node-progress"><div class="node-progress-bar" style="width:0%" id="prog-${id}"></div></div>` : ''}</div>`;
+}
+function autoSizeStickyTextArea(ta, nodeObj) {
+  if (!ta.classList.contains('sticky-textarea')) return;
+  ta.style.height = 'auto';
+  ta.style.height = Math.max(140, ta.scrollHeight) + 'px';
+  refreshContainingGroup(nodeObj);
+  renderConnections();
+}
+
+function attachNodeEvents(el, nodeObj) {
+  el.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    if (e.target.closest('.node-header')) return;
+    if (e.target.closest('textarea, button, select, .node-port-out, .port-left, .node-resize-handle')) return;
+    e.stopPropagation();
+    handleNodeSelection(nodeObj, e);
+    startDrag(e, nodeObj);
+  });
+  const header = el.querySelector('.node-header');
+  if (header) header.addEventListener('mousedown', e => {
+    if (e.button !== 0 || e.target.closest('.node-port-out')) return;
+    e.stopPropagation();
+    handleNodeSelection(nodeObj, e);
+    startDrag(e, nodeObj);
+  });
+  el.querySelectorAll('.node-port-out').forEach(port => port.addEventListener('mousedown', e => { e.stopPropagation(); startConnect(e, nodeObj, port); }));
+  el.querySelectorAll('textarea').forEach(ta => {
+    autoSizeStickyTextArea(ta, nodeObj);
+    ta.addEventListener('input', e => { const n = state.nodes.find(n => n.id === ta.dataset.node); if (n) n.data[ta.dataset.field || 'text'] = ta.value; autoSizeStickyTextArea(ta, nodeObj); e.stopPropagation(); });
+    ta.addEventListener('mousedown', e => { handleNodeSelection(nodeObj, e); e.stopPropagation(); });
+  });
+  el.querySelectorAll('.ratio-btn').forEach(btn => btn.addEventListener('click', () => { const n = state.nodes.find(n => n.id === btn.dataset.node); if (!n) return; n.data.ratio = btn.dataset.ratio; el.querySelectorAll('.ratio-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }));
+  el.querySelectorAll('select').forEach(sel => {
+    sel.addEventListener('change', e => { const n = state.nodes.find(n => n.id === sel.dataset.node); if (n) n.data[sel.dataset.field] = sel.value; e.stopPropagation(); });
+    sel.addEventListener('mousedown', e => e.stopPropagation());
+  });
+  el.querySelectorAll('.chip-btn[data-field]').forEach(btn => btn.addEventListener('click', e => {
+    e.stopPropagation(); const n = state.nodes.find(n => n.id === btn.dataset.node); if (!n) return;
+    n.data[btn.dataset.field] = btn.dataset.value || btn.textContent.trim();
+    btn.parentElement?.querySelectorAll(`.chip-btn[data-field="${btn.dataset.field}"]`).forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }));
+  const resizeHandle = el.querySelector('.node-resize-handle');
+  if (resizeHandle) resizeHandle.addEventListener('mousedown', e => {
+    e.stopPropagation(); e.preventDefault();
+    pushHistory();
+    const startW = el.offsetWidth, startH = el.offsetHeight, startX = e.clientX, startY = e.clientY;
+    function onMove(ev) { el.style.width = Math.max(330, startW + (ev.clientX - startX) / state.scale) + 'px'; el.style.minHeight = Math.max(420, startH + (ev.clientY - startY) / state.scale) + 'px'; renderConnections(); refreshContainingGroup(nodeObj); }
+    function onUp() { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); }
+    document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp);
+  });
+  el.querySelectorAll('.toggle').forEach(tog => tog.addEventListener('click', e => { e.stopPropagation(); const n = state.nodes.find(n => n.id === tog.dataset.node); if (!n) return; const field = tog.dataset.field || 'audio'; n.data[field] = !n.data[field]; tog.classList.toggle('on', n.data[field]); }));
+  el.querySelectorAll('[data-action="generate"]').forEach(btn => btn.addEventListener('click', e => { e.stopPropagation(); runNode(nodeObj); }));
+}
+
+function handleNodeSelection(nodeObj, e) {
+  state.selectedConnection = null;
+  if (e.shiftKey || e.metaKey || e.ctrlKey) {
+    if (state.selectedNodes.has(nodeObj.id)) state.selectedNodes.delete(nodeObj.id);
+    else state.selectedNodes.add(nodeObj.id);
+    state.selectedGroup = null;
+  } else if (!state.selectedNodes.has(nodeObj.id)) {
+    clearSelection();
+    state.selectedNodes.add(nodeObj.id);
+  }
+  syncSelectionUI();
+}
+function clearSelection() { state.selectedNodes.clear(); state.selectedGroup = null; state.selectedConnection = null; syncSelectionUI(); renderConnections(); }
+function syncSelectionUI() {
+  state.nodes.forEach(n => { n.el.classList.toggle('selected', state.selectedNodes.has(n.id)); n.el.classList.toggle('group-member', !!n.groupId); });
+  const fullGroups = selectedFullGroups();
+  state.groups.forEach(g => g.el.classList.toggle('selected', state.selectedGroup === g.id || isGroupFullySelected(g)));
+  const count = state.selectedNodes.size;
+  document.getElementById('save-status').textContent = state.selectedConnection ? 'Connection selected' : fullGroups.length > 1 ? `${fullGroups.length} groups selected` : state.selectedGroup ? `Group selected` : count ? `${count} selected` : 'Saved';
+  syncToolbarState();
+}
+function selectedNodes() { return state.nodes.filter(n => state.selectedNodes.has(n.id)); }
+function getGroup(id) { return state.groups.find(g => g.id === id); }
+function groupOfNode(nodeId) { return state.groups.find(g => g.nodeIds.includes(nodeId)); }
+function isGroupFullySelected(group) { return group.nodeIds.length > 0 && group.nodeIds.every(id => state.selectedNodes.has(id)); }
+function selectedFullGroups() { return state.groups.filter(isGroupFullySelected); }
+function syncPrimarySelectedGroup() {
+  const groups = selectedFullGroups();
+  state.selectedGroup = groups.length === 1 && state.selectedNodes.size === groups[0].nodeIds.length ? groups[0].id : null;
+}
+function handleGroupSelection(group, e) {
+  state.selectedConnection = null;
+  const additive = e.shiftKey || e.metaKey || e.ctrlKey;
+  const selected = isGroupFullySelected(group);
+  if (additive) {
+    if (selected) group.nodeIds.forEach(id => state.selectedNodes.delete(id));
+    else group.nodeIds.forEach(id => state.selectedNodes.add(id));
+    syncPrimarySelectedGroup();
+  } else if (!selected) {
+    selectGroup(group.id);
+    return;
+  } else {
+    syncPrimarySelectedGroup();
+  }
+  syncSelectionUI();
+}
+function startGroupDrag(group, e) {
+  e.stopPropagation();
+  pushHistory();
+  handleGroupSelection(group, e);
+  const groups = selectedFullGroups();
+  state.groupDrag = {
+    clientX: e.clientX,
+    clientY: e.clientY,
+    nodes: selectedNodes().map(n => ({ id: n.id, x: n.x, y: n.y })),
+    groups: groups.map(g => ({ id: g.id, x: g.x, y: g.y }))
+  };
+  groups.forEach(g => g.el.classList.add('dragging'));
+}
+function selectConnection(connId) {
+  state.selectedNodes.clear();
+  state.selectedGroup = null;
+  state.selectedConnection = connId;
+  syncSelectionUI();
+  renderConnections();
+}
+
+function startDrag(e, nodeObj) {
+  pushHistory();
+  state.draggingNode = nodeObj;
+  const rect = nodeObj.el.getBoundingClientRect();
+  state.dragOffsetX = e.clientX - rect.left;
+  state.dragOffsetY = e.clientY - rect.top;
+  const nodes = selectedNodes().length ? selectedNodes() : [nodeObj];
+  if (!nodes.length) return;
+  state.dragStart = {
+    clientX: e.clientX, clientY: e.clientY,
+    nodes: nodes.map(n => ({ id: n.id, x: n.x, y: n.y })),
+    groups: state.groups.filter(g => g.nodeIds.every(id => state.selectedNodes.has(id))).map(g => ({ id: g.id, x: g.x, y: g.y }))
+  };
+  nodes.forEach(n => { n.el.classList.add('dragging'); n.el.style.zIndex = 100; });
+}
+
+function createGroupFromSelection() {
+  const nodes = selectedNodes();
+  if (nodes.length < 2) { showToast('Select at least 2 nodes'); return; }
+  pushHistory();
+  const bounds = getNodeBounds(nodes, 28);
+  const id = gid();
+  const group = { id, name: `Group ${state.nextGroupId - 1}`, nodeIds: nodes.map(n => n.id), x: bounds.x, y: bounds.y, w: bounds.w, h: bounds.h, el: null, handles: [], manualSize: false };
+  nodes.forEach(n => n.groupId = id);
+  const el = document.createElement('div');
+  el.className = 'group-frame';
+  el.innerHTML = `<div class="group-label">${group.name}</div>`;
+  group.el = el;
+  canvas.insertBefore(el, svg.nextSibling);
+  ['nw','n','ne','e','se','s','sw','w'].forEach(dir => {
+    const handle = document.createElement('div');
+    handle.className = `group-resize-handle ${dir}`;
+    handle.dataset.dir = dir;
+    handle.title = 'Scale group';
+    canvas.appendChild(handle);
+    handle.addEventListener('mousedown', e => {
+      if (e.button !== 0) return;
+      beginGroupResize(group, e, dir);
+    });
+    group.handles.push(handle);
+  });
+  positionGroupFrame(group);
+  el.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    if (e.target.closest('.group-resize-handle')) return;
+    const resizeDir = getGroupResizeDir(group, e);
+    if (resizeDir) {
+      beginGroupResize(group, e, resizeDir);
+      return;
+    }
+    e.stopPropagation();
+    startGroupDrag(group, e);
+  });
+  state.groups.push(group);
+  selectGroup(id);
+  showToast('Group created');
+}
+function createGroupFromData(saved) {
+  const group = {
+    id: saved.id, name: saved.name, nodeIds: [...saved.nodeIds], x: saved.x, y: saved.y,
+    w: saved.w, h: saved.h, el: null, handles: [], manualSize: !!saved.manualSize
+  };
+  const el = document.createElement('div');
+  el.className = 'group-frame';
+  el.innerHTML = `<div class="group-label">${esc(group.name)}</div>`;
+  group.el = el;
+  canvas.insertBefore(el, svg.nextSibling);
+  ['nw','n','ne','e','se','s','sw','w'].forEach(dir => {
+    const handle = document.createElement('div');
+    handle.className = `group-resize-handle ${dir}`;
+    handle.dataset.dir = dir;
+    handle.title = 'Scale group';
+    canvas.appendChild(handle);
+    handle.addEventListener('mousedown', e => {
+      if (e.button !== 0) return;
+      beginGroupResize(group, e, dir);
+    });
+    group.handles.push(handle);
+  });
+  el.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    const resizeDir = getGroupResizeDir(group, e);
+    if (resizeDir) { beginGroupResize(group, e, resizeDir); return; }
+    e.stopPropagation();
+    startGroupDrag(group, e);
+  });
+  group.nodeIds.forEach(id => { const n = state.nodes.find(node => node.id === id); if (n) n.groupId = group.id; });
+  state.groups.push(group);
+  positionGroupFrame(group);
+  return group;
+}
+function getGroupResizeDir(group, e) {
+  const p = screenToCanvas(e.clientX, e.clientY);
+  const edge = 16;
+  const left = p.x <= group.x + edge;
+  const right = p.x >= group.x + group.w - edge;
+  const top = p.y <= group.y + edge;
+  const bottom = p.y >= group.y + group.h - edge;
+  if (top && left) return 'nw';
+  if (top && right) return 'ne';
+  if (bottom && right) return 'se';
+  if (bottom && left) return 'sw';
+  if (top) return 'n';
+  if (right) return 'e';
+  if (bottom) return 's';
+  if (left) return 'w';
+  return null;
+}
+function positionGroupFrame(group) {
+  group.el.style.left = group.x + 'px';
+  group.el.style.top = group.y + 'px';
+  group.el.style.width = group.w + 'px';
+  group.el.style.height = group.h + 'px';
+  const positions = {
+    nw: [group.x - 7, group.y - 7],
+    n: [group.x + group.w / 2 - 22, group.y - 4],
+    ne: [group.x + group.w - 7, group.y - 7],
+    e: [group.x + group.w - 4, group.y + group.h / 2 - 22],
+    se: [group.x + group.w - 7, group.y + group.h - 7],
+    s: [group.x + group.w / 2 - 22, group.y + group.h - 4],
+    sw: [group.x - 7, group.y + group.h - 7],
+    w: [group.x - 4, group.y + group.h / 2 - 22]
+  };
+  group.handles.forEach(handle => {
+    const pos = positions[handle.dataset.dir];
+    handle.style.left = pos[0] + 'px';
+    handle.style.top = pos[1] + 'px';
+  });
+}
+function beginGroupResize(group, e, dir) {
+  e.stopPropagation();
+  e.preventDefault();
+  pushHistory();
+  selectGroup(group.id);
+  group.manualSize = true;
+  state.groupResize = {
+    id: group.id,
+    clientX: e.clientX,
+    clientY: e.clientY,
+    x: group.x,
+    y: group.y,
+    w: group.w,
+    h: group.h,
+    dir,
+    nodes: group.nodeIds
+      .map(nodeId => state.nodes.find(n => n.id === nodeId))
+      .filter(Boolean)
+      .map(n => ({ id: n.id, x: n.x, y: n.y, scale: n.scale || 1 }))
+  };
+  group.el.classList.add('dragging');
+}
+function selectGroup(id) {
+  const group = getGroup(id);
+  if (!group) return;
+  state.selectedNodes = new Set(group.nodeIds);
+  state.selectedGroup = id;
+  state.selectedConnection = null;
+  syncSelectionUI();
+}
+function ungroupSelected() {
+  const group = state.selectedGroup ? getGroup(state.selectedGroup) : groupOfNode([...state.selectedNodes][0]);
+  if (!group) { showToast('Select a group first'); return; }
+  pushHistory();
+  group.nodeIds.forEach(id => { const n = state.nodes.find(node => node.id === id); if (n) n.groupId = null; });
+  group.el.remove();
+  group.handles?.forEach(handle => handle.remove());
+  state.groups = state.groups.filter(g => g.id !== group.id);
+  state.selectedGroup = null;
+  syncSelectionUI();
+  showToast('Ungrouped');
+}
+function deleteSelection() {
+  if (state.selectedConnection) {
+    pushHistory();
+    state.connections = state.connections.filter(c => c.id !== state.selectedConnection);
+    clearSelection();
+    refreshAllVideoInputChips();
+    showToast('Connection deleted');
+    return;
+  }
+  const ids = new Set(state.selectedNodes);
+  if (state.selectedGroup) getGroup(state.selectedGroup)?.nodeIds.forEach(id => ids.add(id));
+  if (!ids.size) return;
+  pushHistory();
+  state.nodes = state.nodes.filter(n => {
+    if (!ids.has(n.id)) return true;
+    n.el.remove();
+    return false;
+  });
+  state.connections = state.connections.filter(c => !ids.has(c.from) && !ids.has(c.to));
+  state.groups = state.groups.filter(g => {
+    g.nodeIds = g.nodeIds.filter(id => !ids.has(id));
+    if (g.nodeIds.length < 2) {
+      g.el.remove();
+      g.handles?.forEach(h => h.remove());
+      return false;
+    }
+    refreshGroupBounds(g);
+    return true;
+  });
+  clearSelection();
+  renderConnections();
+  refreshAllVideoInputChips();
+  showToast('Deleted');
+}
+function copySelection() {
+  const ids = new Set(state.selectedNodes);
+  if (!ids.size) return;
+  state.clipboard = {
+    nodes: state.nodes.filter(n => ids.has(n.id)).map(n => ({
+      id: n.id, type: n.type, x: n.x, y: n.y, scale: n.scale || 1,
+      data: JSON.parse(JSON.stringify(n.data || {})),
+      width: n.el.style.width || '', minHeight: n.el.style.minHeight || ''
+    })),
+    connections: state.connections.filter(c => ids.has(c.from) && ids.has(c.to)).map(c => ({ from: c.from, to: c.to, state: 'idle' })),
+    nodeIds: [...ids]
+  };
+  showToast('Copied');
+}
+function pasteClipboard() {
+  if (!state.clipboard?.nodes?.length) return;
+  pushHistory();
+  const idMap = new Map();
+  clearSelection();
+  state.clipboard.nodes.forEach(saved => {
+    const n = createNode(saved.type, saved.x + 32, saved.y + 32);
+    n.data = JSON.parse(JSON.stringify(saved.data || {}));
+    n.scale = saved.scale || 1;
+    if (saved.width) n.el.style.width = saved.width;
+    if (saved.minHeight) n.el.style.minHeight = saved.minHeight;
+    applyNodeScale(n);
+    idMap.set(saved.id, n.id);
+    state.selectedNodes.add(n.id);
+  });
+  state.clipboard.connections.forEach(c => {
+    const from = idMap.get(c.from), to = idMap.get(c.to);
+    if (from && to) state.connections.push({ id: uid(), from, to, state: 'idle' });
+  });
+  syncSelectionUI();
+  renderConnections();
+  showToast('Pasted');
+}
+function duplicateSelection() {
+  copySelection();
+  pasteClipboard();
+}
+function getNodeBounds(nodes, pad = 0) {
+  const minX = Math.min(...nodes.map(n => n.x));
+  const minY = Math.min(...nodes.map(n => n.y));
+  const maxX = Math.max(...nodes.map(n => n.x + n.el.offsetWidth * (n.scale || 1)));
+  const maxY = Math.max(...nodes.map(n => n.y + n.el.offsetHeight * (n.scale || 1)));
+  return { x: minX - pad, y: minY - pad, w: maxX - minX + pad * 2, h: maxY - minY + pad * 2 };
+}
+function refreshGroupBounds(group) {
+  if (typeof group === 'string') group = getGroup(group);
+  if (!group) return;
+  const nodes = group.nodeIds.map(id => state.nodes.find(n => n.id === id)).filter(Boolean);
+  if (!nodes.length) return;
+  const b = getNodeBounds(nodes, 28);
+  if (group.manualSize) {
+    const right = group.x + group.w;
+    const bottom = group.y + group.h;
+    const neededRight = b.x + b.w;
+    const neededBottom = b.y + b.h;
+    group.x = Math.min(group.x, b.x);
+    group.y = Math.min(group.y, b.y);
+    group.w = Math.max(right, neededRight) - group.x;
+    group.h = Math.max(bottom, neededBottom) - group.y;
+  } else {
+    Object.assign(group, b);
+  }
+  positionGroupFrame(group);
+}
+function refreshContainingGroup(nodeObj) { if (nodeObj.groupId) refreshGroupBounds(nodeObj.groupId); }
+
+let tempLine = null, tempDot = null;
+function startConnect(e, nodeObj, portEl) {
+  state.selectedConnection = null;
+  syncSelectionUI();
+  renderConnections();
+  state.connectingFrom = { nodeId: nodeObj.id, portEl };
+  const pos = getPortCenter(portEl);
+  tempLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  tempLine.classList.add('conn-line', 'active'); svg.appendChild(tempLine);
+  tempDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  tempDot.classList.add('conn-dot', 'active'); tempDot.setAttribute('cx', pos.x); tempDot.setAttribute('cy', pos.y); svg.appendChild(tempDot);
+  updateTempLine(pos, pos);
+}
+function getPortCenter(portEl) {
+  const rect = portEl.getBoundingClientRect(), wrect = canvasWrap.getBoundingClientRect();
+  return { x: (rect.left + rect.width / 2 - wrect.left - state.panX) / state.scale, y: (rect.top + rect.height / 2 - wrect.top - state.panY) / state.scale };
+}
+function makeCalmPath(from, to) {
+  const dx = to.x - from.x, bend = Math.max(44, Math.abs(dx) * .38);
+  return `M${from.x},${from.y} C${from.x + (dx >= 0 ? bend : -bend)},${from.y} ${to.x - (dx >= 0 ? bend : -bend)},${to.y} ${to.x},${to.y}`;
+}
+function makePremiumWavyPath(from, to, phase = 0) {
+  const dx = to.x - from.x, dy = to.y - from.y, dist = Math.hypot(dx, dy);
+  if (dist < 1) return `M${from.x},${from.y} L${to.x},${to.y}`;
+  const amp = Math.min(11, Math.max(4.8, dist * .022)), waveLen = 44, steps = Math.max(26, Math.ceil(dist / 6)), nx = -dy / dist, ny = dx / dist;
+  let d = `M${from.x},${from.y}`;
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps, endLock = Math.sin(Math.PI * t), wave = (Math.sin((t * dist / waveLen) * Math.PI * 2 - phase) * amp + Math.sin((t * dist / 19) * Math.PI * 2 + phase * .62) * amp * .22) * endLock;
+    d += ` L${from.x + dx * t + nx * wave},${from.y + dy * t + ny * wave}`;
+  }
+  return d;
+}
+function getPointOnLine(from, to, t, phase = 0) {
+  const dx = to.x - from.x, dy = to.y - from.y, dist = Math.hypot(dx, dy);
+  if (dist < 1) return { x: from.x, y: from.y };
+  const amp = Math.min(11, Math.max(4.8, dist * .022)), nx = -dy / dist, ny = dx / dist;
+  const wave = (Math.sin((t * dist / 44) * Math.PI * 2 - phase) * amp + Math.sin((t * dist / 19) * Math.PI * 2 + phase * .62) * amp * .22) * Math.sin(Math.PI * t);
+  return { x: from.x + dx * t + nx * wave, y: from.y + dy * t + ny * wave };
+}
+let waveAnimFrame = null;
+function startWaveAnimation() {
+  if (waveAnimFrame) return;
+  const tick = time => {
+    let has = false; const phase = time / 105;
+    svg.querySelectorAll('.conn-group.running').forEach(group => {
+      if (!state.squiggle) return;
+      const path = group.querySelector('.conn-line'), hit = group.querySelector('.conn-hit'), glow = group.querySelector('.conn-line-shadow'), energy = group.querySelector('.conn-energy-dot'), sparks = group.querySelectorAll('.conn-spark');
+      if (!path) return; has = true;
+      const from = { x: parseFloat(path.dataset.fromX), y: parseFloat(path.dataset.fromY) }, to = { x: parseFloat(path.dataset.toX), y: parseFloat(path.dataset.toY) };
+      const d = makePremiumWavyPath(from, to, phase); path.setAttribute('d', d); if (hit) hit.setAttribute('d', d); if (glow) glow.setAttribute('d', d);
+      const travel = (time / 1100) % 1, dot = getPointOnLine(from, to, travel, phase);
+      if (energy) { energy.setAttribute('cx', dot.x); energy.setAttribute('cy', dot.y); }
+      sparks.forEach((spark, index) => { const t = (travel - (index === 0 ? .16 : .31) + 1) % 1, pt = getPointOnLine(from, to, t, phase); spark.setAttribute('cx', pt.x); spark.setAttribute('cy', pt.y); spark.setAttribute('r', index === 0 ? 2.1 : 1.55); spark.style.opacity = Math.max(0, Math.sin(Math.PI * t) * .55).toFixed(3); });
+    });
+    if (has) waveAnimFrame = requestAnimationFrame(tick); else waveAnimFrame = null;
+  };
+  waveAnimFrame = requestAnimationFrame(tick);
+}
+function getNodeOutputPort(nodeObj) {
+  if (nodeObj.type === 'stickynote') return null;
+  return nodeObj.el.querySelector('.node-port-out');
+}
+function getNodeCenter(nodeObj) { return { x: nodeObj.x + nodeObj.el.offsetWidth * (nodeObj.scale || 1) / 2, y: nodeObj.y + nodeObj.el.offsetHeight * (nodeObj.scale || 1) / 2 }; }
+function updateTempLine(from, to) { if (tempLine) tempLine.setAttribute('d', makeCalmPath(from, to)); }
+function finishConnect(e) {
+  if (!state.connectingFrom) return;
+  const { nodeId } = state.connectingFrom;
+  const els = document.elementsFromPoint(e.clientX, e.clientY);
+  let targetNode = null;
+  for (const el of els) {
+    const nodeEl = el.closest('.node');
+    if (nodeEl && nodeEl.id !== nodeId) { targetNode = state.nodes.find(n => n.id === nodeEl.id); break; }
+  }
+  if (tempLine) { svg.removeChild(tempLine); tempLine = null; }
+  if (tempDot) { svg.removeChild(tempDot); tempDot = null; }
+  if (targetNode && !state.connections.find(c => c.from === nodeId && c.to === targetNode.id)) {
+    state.connections.push({ id: uid(), from: nodeId, to: targetNode.id, state: 'idle' });
+    renderConnections(); refreshAllVideoInputChips(); showToast('Connected!');
+  }
+  state.connectingFrom = null;
+}
+function renderConnections() {
+  svg.querySelectorAll('.conn-group').forEach(g => g.remove());
+  state.connections.forEach(conn => {
+    const fromNode = state.nodes.find(n => n.id === conn.from), toNode = state.nodes.find(n => n.id === conn.to);
+    if (!fromNode || !toNode) return;
+    const fromPort = getNodeOutputPort(fromNode), inputPorts = Array.from(toNode.el.querySelectorAll('.port-left'));
+    const incoming = state.connections.filter(c => c.to === toNode.id), portIndex = Math.max(0, incoming.findIndex(c => c.id === conn.id));
+    const toPort = inputPorts.length ? inputPorts[Math.min(portIndex, inputPorts.length - 1)] : null;
+    const fp = fromPort ? getPortCenter(fromPort) : getNodeCenter(fromNode), tp = toPort ? getPortCenter(toPort) : getNodeCenter(toNode);
+    const isRunning = conn.state === 'running';
+    const d = isRunning && state.squiggle ? makePremiumWavyPath(fp, tp) : makeCalmPath(fp, tp);
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.classList.add('conn-group'); if (conn.state === 'running') g.classList.add('running'); if (state.selectedConnection === conn.id) g.classList.add('selected');
+    const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path'); hitPath.classList.add('conn-hit'); hitPath.setAttribute('d', d); hitPath.addEventListener('mousedown', e => { e.stopPropagation(); if (e.button === 0) selectConnection(conn.id); });
+    const glowPath = document.createElementNS('http://www.w3.org/2000/svg', 'path'); glowPath.classList.add('conn-line-shadow'); if (conn.state === 'running') glowPath.classList.add('running'); if (isRunning && !state.squiggle) glowPath.classList.add('calm-running'); glowPath.setAttribute('d', d);
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); path.classList.add('conn-line'); if (conn.state === 'running') path.classList.add('running'); else if (conn.state === 'done') path.classList.add('done'); else if (conn.state === 'active') path.classList.add('active'); if (state.selectedConnection === conn.id) path.classList.add('selected'); if (isRunning && !state.squiggle) path.classList.add('calm-running'); path.setAttribute('d', d); path.dataset.fromX = fp.x; path.dataset.fromY = fp.y; path.dataset.toX = tp.x; path.dataset.toY = tp.y;
+    const dotFrom = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); dotFrom.classList.add('conn-dot'); if (conn.state === 'running') dotFrom.classList.add('running'); dotFrom.setAttribute('cx', fp.x); dotFrom.setAttribute('cy', fp.y);
+    const dotTo = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); dotTo.classList.add('conn-dot'); if (conn.state === 'running') dotTo.classList.add('running'); dotTo.setAttribute('cx', tp.x); dotTo.setAttribute('cy', tp.y);
+    const energyDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); energyDot.classList.add('conn-energy-dot'); if (conn.state === 'running' && state.squiggle) energyDot.classList.add('running'); energyDot.setAttribute('cx', fp.x); energyDot.setAttribute('cy', fp.y);
+    const spark1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); spark1.classList.add('conn-spark'); if (conn.state === 'running' && state.squiggle) spark1.classList.add('running');
+    const spark2 = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); spark2.classList.add('conn-spark'); if (conn.state === 'running' && state.squiggle) spark2.classList.add('running');
+    g.append(hitPath, glowPath, path, energyDot, spark1, spark2, dotFrom, dotTo); svg.appendChild(g);
+  });
+  startWaveAnimation();
+}
+
+function nodeHasConnection(nodeId) {
+  return state.connections.some(c => c.from === nodeId || c.to === nodeId);
+}
+function runNode(nodeObj, delay = 0, silent = false) {
+  if (!nodeHasConnection(nodeObj.id)) {
+    if (!silent) showToast('Connect this node first');
+    return Promise.resolve(false);
+  }
+  return new Promise(resolve => {
+    setTimeout(() => {
+      nodeObj.el.classList.add('running'); nodeObj.el.classList.remove('done');
+      state.connections.filter(c => c.to === nodeObj.id || c.from === nodeObj.id).forEach(c => c.state = 'running');
+      renderConnections();
+      const prog = document.getElementById('prog-' + nodeObj.id);
+      let pct = 0;
+      if (prog) {
+        const interval = setInterval(() => { pct = Math.min(pct + Math.random() * 15, 90); prog.style.width = pct + '%'; }, 200);
+        setTimeout(() => { clearInterval(interval); prog.style.width = '100%'; setTimeout(() => finishRun(nodeObj, prog, resolve), 300); }, 2200 + Math.random() * 800);
+      } else setTimeout(() => finishRun(nodeObj, prog, resolve), 2000);
+    }, delay);
+  });
+}
+function finishRun(nodeObj, prog, resolve) {
+  nodeObj.el.classList.remove('running'); nodeObj.el.classList.add('done');
+  if (prog) { prog.style.width = '0%'; prog.parentElement.style.opacity = '0'; }
+  state.connections.filter(c => c.to === nodeObj.id || c.from === nodeObj.id).forEach(c => c.state = 'done');
+  renderConnections(); resolve(true);
+}
+async function runAll() {
+  if (state.isRunning) return;
+  state.isRunning = true;
+  const btn = document.getElementById('run-all-btn');
+  btn.classList.add('running'); btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><rect x="2" y="2" width="3" height="8" rx="1"/><rect x="7" y="2" width="3" height="8" rx="1"/></svg> Running...`;
+  state.nodes.forEach(n => { n.el.classList.remove('running','done'); const prog = document.getElementById('prog-' + n.id); if (prog) { prog.style.width = '0%'; prog.parentElement.style.opacity = '1'; } });
+  state.connections.forEach(c => c.state = 'active'); renderConnections();
+  const levels = getParallelRunLevels();
+  if (!levels.length) showToast('Connect nodes to run');
+  for (const level of levels) await Promise.all(level.map(nodeObj => runNode(nodeObj, 0, true)));
+  btn.classList.remove('running'); btn.innerHTML = `<svg viewBox="0 0 12 12" fill="currentColor" width="12" height="12"><path d="M2 1.5l8 4.5-8 4.5z"/></svg> Run all`;
+  state.isRunning = false;
+  if (levels.length) showToast('Pipeline complete ✓');
+}
+function getParallelRunLevels() {
+  const runnableNodes = state.nodes.filter(n => nodeHasConnection(n.id));
+  const nodeById = new Map(runnableNodes.map(n => [n.id, n])), indegree = new Map(runnableNodes.map(n => [n.id, 0])), outgoing = new Map(runnableNodes.map(n => [n.id, []]));
+  state.connections.forEach(c => { if (!nodeById.has(c.from) || !nodeById.has(c.to)) return; indegree.set(c.to, (indegree.get(c.to) || 0) + 1); outgoing.get(c.from).push(c.to); });
+  const levels = []; let ready = runnableNodes.filter(n => (indegree.get(n.id) || 0) === 0); const queued = new Set(ready.map(n => n.id));
+  while (ready.length) { levels.push(ready); const nextReady = []; ready.forEach(node => (outgoing.get(node.id) || []).forEach(toId => { indegree.set(toId, indegree.get(toId) - 1); if (indegree.get(toId) === 0 && !queued.has(toId)) { const nextNode = nodeById.get(toId); if (nextNode) { nextReady.push(nextNode); queued.add(toId); } } })); ready = nextReady; }
+  const remaining = runnableNodes.filter(n => !queued.has(n.id)); if (remaining.length) levels.push(remaining);
+  return levels;
+}
+
+canvasWrap.addEventListener('mousedown', e => {
+  if (state.activeTool === 'pan' || state.spacePanActive || e.button === 1) {
+    state.isPanning = true; state.panStart = { x: e.clientX - state.panX, y: e.clientY - state.panY }; canvasWrap.style.cursor = 'grabbing'; e.preventDefault();
+  } else if (state.activeTool === 'select' && !e.target.closest('.node') && !e.target.closest('.group-frame')) {
+    hideCtxMenu();
+    if (e.button === 0) {
+      clearSelection();
+      const p = screenToCanvas(e.clientX, e.clientY);
+      state.marquee = { startX: p.x, startY: p.y };
+      selectionBox.style.display = 'block';
+      setSelectionBox(p.x, p.y, p.x, p.y);
+    }
+  }
+});
+document.addEventListener('mousemove', e => {
+  if (state.isPanning) { state.panX = e.clientX - state.panStart.x; state.panY = e.clientY - state.panStart.y; applyTransform(); renderConnections(); }
+  if (state.marquee) {
+    const p = screenToCanvas(e.clientX, e.clientY);
+    setSelectionBox(state.marquee.startX, state.marquee.startY, p.x, p.y);
+    selectInRect(normalizeRect(state.marquee.startX, state.marquee.startY, p.x, p.y));
+  }
+  if (state.groupDrag) {
+    const dx = (e.clientX - state.groupDrag.clientX) / state.scale, dy = (e.clientY - state.groupDrag.clientY) / state.scale;
+    state.groupDrag.nodes.forEach(start => { const n = state.nodes.find(node => node.id === start.id); if (n) moveNode(n, start.x + dx, start.y + dy); });
+    state.groupDrag.groups.forEach(start => { const g = getGroup(start.id); if (g) { g.x = start.x + dx; g.y = start.y + dy; positionGroupFrame(g); } });
+    renderConnections();
+  }
+  if (state.groupResize) {
+    const dx = (e.clientX - state.groupResize.clientX) / state.scale, dy = (e.clientY - state.groupResize.clientY) / state.scale;
+    const g = getGroup(state.groupResize.id);
+    if (g) {
+      const dir = state.groupResize.dir;
+      const xFactor = dir.includes('w') ? (state.groupResize.w - dx) / state.groupResize.w : dir.includes('e') ? (state.groupResize.w + dx) / state.groupResize.w : null;
+      const yFactor = dir.includes('n') ? (state.groupResize.h - dy) / state.groupResize.h : dir.includes('s') ? (state.groupResize.h + dy) / state.groupResize.h : null;
+      const rawFactor = xFactor && yFactor ? Math.min(xFactor, yFactor) : (xFactor || yFactor || 1);
+      const factor = Math.max(0.35, Math.min(2.6, rawFactor));
+      const anchorX = dir.includes('w') ? state.groupResize.x + state.groupResize.w : state.groupResize.x;
+      const anchorY = dir.includes('n') ? state.groupResize.y + state.groupResize.h : state.groupResize.y;
+      g.x = dir.includes('w') ? anchorX - state.groupResize.w * factor : state.groupResize.x;
+      g.y = dir.includes('n') ? anchorY - state.groupResize.h * factor : state.groupResize.y;
+      g.w = Math.max(120, state.groupResize.w * factor);
+      g.h = Math.max(90, state.groupResize.h * factor);
+      g.manualSize = true;
+      state.groupResize.nodes.forEach(start => {
+        const n = state.nodes.find(node => node.id === start.id);
+        if (!n) return;
+        n.scale = Math.max(0.25, Math.min(3, start.scale * factor));
+        moveNode(
+          n,
+          anchorX + (start.x - anchorX) * factor,
+          anchorY + (start.y - anchorY) * factor
+        );
+        applyNodeScale(n);
+      });
+      positionGroupFrame(g);
+      renderConnections();
+    }
+  }
+  if (state.draggingNode && state.dragStart) {
+    const dx = (e.clientX - state.dragStart.clientX) / state.scale, dy = (e.clientY - state.dragStart.clientY) / state.scale;
+    state.dragStart.nodes.forEach(start => { const n = state.nodes.find(node => node.id === start.id); if (n) moveNode(n, start.x + dx, start.y + dy); });
+    state.dragStart.groups.forEach(start => { const g = getGroup(start.id); if (g) { g.x = start.x + dx; g.y = start.y + dy; positionGroupFrame(g); } });
+    renderConnections();
+  }
+  if (state.connectingFrom) {
+    const fp = getPortCenter(state.connectingFrom.portEl), wrect = canvasWrap.getBoundingClientRect();
+    updateTempLine(fp, { x: (e.clientX - wrect.left - state.panX) / state.scale, y: (e.clientY - wrect.top - state.panY) / state.scale });
+    if (tempDot) { tempDot.setAttribute('cx', fp.x); tempDot.setAttribute('cy', fp.y); }
+  }
+});
+document.addEventListener('mouseup', e => {
+  if (state.isPanning) { state.isPanning = false; canvasWrap.style.cursor = state.activeTool === 'pan' || state.spacePanActive ? 'grab' : 'default'; }
+  if (state.marquee) { state.marquee = null; selectionBox.style.display = 'none'; syncSelectionUI(); }
+  if (state.groupDrag) { state.groups.forEach(g => g.el.classList.remove('dragging')); state.groupDrag = null; }
+  if (state.groupResize) { state.groups.forEach(g => g.el.classList.remove('dragging')); state.groupResize = null; }
+  if (state.draggingNode) { state.nodes.forEach(n => { n.el.classList.remove('dragging'); n.el.style.zIndex = ''; if (n.groupId) refreshGroupBounds(n.groupId); }); state.draggingNode = null; state.dragStart = null; }
+  if (state.connectingFrom) finishConnect(e);
+});
+function moveNode(n, x, y) { n.x = x; n.y = y; n.el.style.left = x + 'px'; n.el.style.top = y + 'px'; }
+function applyNodeScale(n) { n.el.style.transform = `scale(${n.scale || 1})`; }
+function getSceneBounds(nodes = state.nodes, pad = 80) {
+  const visible = nodes.length ? nodes : state.nodes;
+  if (!visible.length) return null;
+  const minX = Math.min(...visible.map(n => n.x));
+  const minY = Math.min(...visible.map(n => n.y));
+  const maxX = Math.max(...visible.map(n => n.x + n.el.offsetWidth * (n.scale || 1)));
+  const maxY = Math.max(...visible.map(n => n.y + n.el.offsetHeight * (n.scale || 1)));
+  return { x: minX - pad, y: minY - pad, w: maxX - minX + pad * 2, h: maxY - minY + pad * 2 };
+}
+function fitToContent(nodes = state.nodes) {
+  const bounds = getSceneBounds(nodes, 90);
+  if (!bounds) return;
+  const rect = canvasWrap.getBoundingClientRect();
+  const nextScale = Math.max(MIN_ZOOM, Math.min(1.45, Math.min(rect.width / bounds.w, rect.height / bounds.h)));
+  state.scale = nextScale;
+  state.panX = (rect.width - bounds.w * nextScale) / 2 - bounds.x * nextScale;
+  state.panY = (rect.height - bounds.h * nextScale) / 2 - bounds.y * nextScale;
+  applyTransform();
+  renderConnections();
+}
+function moveGroupTo(group, x, y) {
+  const dx = x - group.x;
+  const dy = y - group.y;
+  group.nodeIds.forEach(id => {
+    const n = state.nodes.find(node => node.id === id);
+    if (n) moveNode(n, n.x + dx, n.y + dy);
+  });
+  group.x += dx;
+  group.y += dy;
+  positionGroupFrame(group);
+}
+function getTidyItems() {
+  const hasSelection = state.selectedNodes.size > 0;
+  const selectedIds = hasSelection ? state.selectedNodes : new Set(state.nodes.map(n => n.id));
+  const groups = state.groups.filter(g => g.nodeIds.some(id => selectedIds.has(id)));
+  const groupedIds = new Set(groups.flatMap(g => g.nodeIds));
+  const looseNodes = state.nodes.filter(n => selectedIds.has(n.id) && !groupedIds.has(n.id));
+  return [
+    ...groups.map(group => ({ type: 'group', group, x: group.x, y: group.y, w: group.w, h: group.h })),
+    ...looseNodes.map(node => ({ type: 'node', node, x: node.x, y: node.y, w: node.el.offsetWidth * (node.scale || 1), h: node.el.offsetHeight * (node.scale || 1) }))
+  ];
+}
+function tidyNodesInsideGroup(group) {
+  const nodes = group.nodeIds.map(id => state.nodes.find(n => n.id === id)).filter(Boolean);
+  if (!nodes.length) return;
+  const innerPad = 42;
+  const startX = group.x + innerPad;
+  const startY = group.y + innerPad;
+  const columns = Math.max(1, Math.ceil(Math.sqrt(nodes.length)));
+  const cellW = Math.max(...nodes.map(n => n.el.offsetWidth * (n.scale || 1))) + 70;
+  const cellH = Math.max(...nodes.map(n => n.el.offsetHeight * (n.scale || 1))) + 58;
+  nodes
+    .slice()
+    .sort((a, b) => (a.y - b.y) || (a.x - b.x))
+    .forEach((node, index) => {
+      moveNode(node, startX + (index % columns) * cellW, startY + Math.floor(index / columns) * cellH);
+    });
+  const b = getNodeBounds(nodes, innerPad);
+  group.x = b.x;
+  group.y = b.y;
+  group.w = b.w;
+  group.h = b.h;
+  group.manualSize = false;
+  positionGroupFrame(group);
+}
+function tidyUp() {
+  if (state.selectedGroup) {
+    const group = getGroup(state.selectedGroup);
+    if (!group) { showToast('Select a group first'); return; }
+    pushHistory();
+    tidyNodesInsideGroup(group);
+    renderConnections();
+    showToast('Group tidied');
+    return;
+  }
+  const items = getTidyItems();
+  if (!items.length) { showToast('Nothing to tidy'); return; }
+  pushHistory();
+  const startX = Math.min(...items.map(item => item.x));
+  const startY = Math.min(...items.map(item => item.y));
+  const columns = Math.max(1, Math.ceil(Math.sqrt(items.length)));
+  const cellW = Math.max(...items.map(item => item.w)) + 90;
+  const cellH = Math.max(...items.map(item => item.h)) + 90;
+  items.forEach((item, index) => {
+    const nextX = startX + (index % columns) * cellW;
+    const nextY = startY + Math.floor(index / columns) * cellH;
+    if (item.type === 'group') moveGroupTo(item.group, nextX, nextY);
+    else moveNode(item.node, nextX, nextY);
+  });
+  renderConnections();
+  showToast('Tidied up');
+}
+function downloadProject() {
+  const payload = JSON.stringify(snapshotState(), null, 2);
+  const blob = new Blob([payload], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'keyframe-connector-project.json';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(link.href);
+}
+function syncToolbarState() {
+  const hasSelection = state.selectedNodes.size > 0 || !!state.selectedConnection;
+  const group = state.selectedGroup ? getGroup(state.selectedGroup) : groupOfNode([...state.selectedNodes][0]);
+  const ungroupBtn = document.getElementById('toolbar-ungroup');
+  const deleteBtn = document.getElementById('toolbar-delete');
+  if (!ungroupBtn || !deleteBtn) return;
+  ungroupBtn.disabled = !group;
+  deleteBtn.disabled = !hasSelection;
+}
+function normalizeRect(x1, y1, x2, y2) { return { x: Math.min(x1,x2), y: Math.min(y1,y2), w: Math.abs(x2-x1), h: Math.abs(y2-y1) }; }
+function setSelectionBox(x1, y1, x2, y2) { const r = normalizeRect(x1,y1,x2,y2); selectionBox.style.left = r.x + 'px'; selectionBox.style.top = r.y + 'px'; selectionBox.style.width = r.w + 'px'; selectionBox.style.height = r.h + 'px'; }
+function intersects(a,b) { return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y; }
+function selectInRect(rect) {
+  state.selectedNodes.clear(); state.selectedGroup = null; state.selectedConnection = null;
+  const selectedGroups = new Set();
+  state.groups.forEach(group => {
+    const groupRect = { x: group.x, y: group.y, w: group.w, h: group.h };
+    if (intersects(rect, groupRect)) selectedGroups.add(group.id);
+  });
+  state.nodes.forEach(n => {
+    const nodeRect = { x: n.x, y: n.y, w: n.el.offsetWidth * (n.scale || 1), h: n.el.offsetHeight * (n.scale || 1) };
+    if (!intersects(rect, nodeRect)) return;
+    if (n.groupId) selectedGroups.add(n.groupId);
+    else state.selectedNodes.add(n.id);
+  });
+  selectedGroups.forEach(groupId => {
+    const group = getGroup(groupId);
+    if (group) group.nodeIds.forEach(id => state.selectedNodes.add(id));
+  });
+  syncPrimarySelectedGroup();
+  syncSelectionUI();
+}
+canvasWrap.addEventListener('wheel', e => {
+  e.preventDefault();
+  if (e.metaKey || e.ctrlKey) {
+    const zoomFactor = e.deltaY < 0 ? 1.08 : .93;
+    const rect = canvasWrap.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    state.panX = mx - (mx - state.panX) * zoomFactor;
+    state.panY = my - (my - state.panY) * zoomFactor;
+    state.scale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, state.scale * zoomFactor));
+  } else {
+    state.panX -= e.deltaX;
+    state.panY -= e.deltaY;
+  }
+  applyTransform(); renderConnections();
+}, { passive: false });
+document.getElementById('zoom-in').addEventListener('click', () => { state.scale = Math.min(MAX_ZOOM, state.scale * 1.15); applyTransform(); renderConnections(); });
+document.getElementById('zoom-out').addEventListener('click', () => { state.scale = Math.max(MIN_ZOOM, state.scale * .87); applyTransform(); renderConnections(); });
+document.getElementById('zoom-fit').addEventListener('click', () => fitToContent());
+document.getElementById('tool-select').addEventListener('click', () => setTool('select'));
+document.getElementById('tool-pan').addEventListener('click', () => setTool('pan'));
+function setCanvasCursor() { canvasWrap.style.cursor = state.activeTool === 'pan' || state.spacePanActive ? 'grab' : 'default'; }
+function setTool(t) { state.activeTool = t; document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active')); document.getElementById('tool-' + t).classList.add('active'); setCanvasCursor(); }
+document.getElementById('toolbar-ungroup').addEventListener('click', ungroupSelected);
+document.getElementById('toolbar-tidy').addEventListener('click', tidyUp);
+document.getElementById('toolbar-fit').addEventListener('click', () => fitToContent());
+document.getElementById('toolbar-download').addEventListener('click', downloadProject);
+document.getElementById('toolbar-delete').addEventListener('click', deleteSelection);
+document.getElementById('squiggle-btn').addEventListener('click', () => {
+  state.squiggle = !state.squiggle;
+  const btn = document.getElementById('squiggle-btn');
+  btn.classList.toggle('off', !state.squiggle);
+  btn.textContent = state.squiggle ? 'Squiggle' : 'Calm';
+  renderConnections();
+  showToast(state.squiggle ? 'Squiggle on' : 'Calm running lines');
+});
+
+let ctxPos = { x: 0, y: 0 }, ctxNodeId = null;
+canvasWrap.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  ctxPos = screenToCanvas(e.clientX, e.clientY);
+  const nodeEl = e.target.closest('.node'), groupEl = e.target.closest('.group-frame');
+  ctxNodeId = nodeEl?.id || null;
+  if (ctxNodeId && !state.selectedNodes.has(ctxNodeId)) { clearSelection(); state.selectedNodes.add(ctxNodeId); syncSelectionUI(); }
+  if (groupEl) { const group = state.groups.find(g => g.el === groupEl); if (group) selectGroup(group.id); }
+  updateContextMenu();
+  showCtxMenu(e.clientX, e.clientY);
+});
+document.getElementById('add-node-btn').addEventListener('click', e => {
+  const r = e.currentTarget.getBoundingClientRect();
+  ctxPos = screenToCanvas(r.left, r.top - 20);
+  updateContextMenu();
+  showCtxMenu(r.left, r.top - 320);
+});
+function updateContextMenu() {
+  const group = document.querySelector('[data-action="group"]'), selectGroupItem = document.querySelector('[data-action="select-group"]'), ungroup = document.querySelector('[data-action="ungroup"]');
+  group.classList.toggle('disabled', state.selectedNodes.size < 2);
+  selectGroupItem.classList.toggle('disabled', !ctxNodeId || !groupOfNode(ctxNodeId));
+  ungroup.classList.toggle('disabled', !state.selectedGroup && !groupOfNode([...state.selectedNodes][0]));
+  filterContextMenu();
+}
+function filterContextMenu() {
+  const query = document.getElementById('ctx-search').value.trim().toLowerCase();
+  const list = document.getElementById('ctx-list');
+  const children = Array.from(list.children);
+  children.forEach(el => {
+    if (el.classList.contains('ctx-item')) {
+      el.classList.toggle('ctx-hidden', query && !el.textContent.trim().toLowerCase().includes(query));
+    }
+  });
+  children.forEach((el, index) => {
+    if (!el.classList.contains('ctx-section')) return;
+    let hasVisibleItem = false;
+    for (let i = index + 1; i < children.length && !children[i].classList.contains('ctx-section'); i++) {
+      if (children[i].classList.contains('ctx-item') && !children[i].classList.contains('ctx-hidden')) hasVisibleItem = true;
+    }
+    el.classList.toggle('ctx-hidden', !hasVisibleItem);
+  });
+  children.forEach((el, index) => {
+    if (!el.classList.contains('ctx-sep')) return;
+    const prevVisible = children.slice(0, index).reverse().find(item => !item.classList.contains('ctx-hidden') && !item.classList.contains('ctx-sep'));
+    const nextVisible = children.slice(index + 1).find(item => !item.classList.contains('ctx-hidden') && !item.classList.contains('ctx-sep'));
+    el.classList.toggle('ctx-hidden', !prevVisible || !nextVisible || query);
+  });
+}
+function showCtxMenu(x, y) {
+  const menu = document.getElementById('ctx-menu');
+  const search = document.getElementById('ctx-search');
+  const list = document.getElementById('ctx-list');
+  search.value = '';
+  list.scrollTop = 0;
+  filterContextMenu();
+  menu.classList.add('visible');
+  const pad = 10;
+  const rect = menu.getBoundingClientRect();
+  menu.style.left = Math.max(pad, Math.min(x, window.innerWidth - rect.width - pad)) + 'px';
+  menu.style.top = Math.max(pad, Math.min(y, window.innerHeight - rect.height - pad)) + 'px';
+}
+function hideCtxMenu() { document.getElementById('ctx-menu').classList.remove('visible'); }
+document.getElementById('ctx-menu').querySelectorAll('.ctx-item').forEach(item => item.addEventListener('click', () => {
+  if (item.classList.contains('disabled')) return;
+  const type = item.dataset.type, action = item.dataset.action;
+  if (type) { pushHistory(); createNode(type, ctxPos.x, ctxPos.y); }
+  if (action === 'group') createGroupFromSelection();
+  if (action === 'select-group' && ctxNodeId) { const g = groupOfNode(ctxNodeId); if (g) selectGroup(g.id); }
+  if (action === 'ungroup') ungroupSelected();
+  hideCtxMenu();
+}));
+document.getElementById('ctx-search').addEventListener('input', filterContextMenu);
+document.getElementById('ctx-search').addEventListener('mousedown', e => e.stopPropagation());
+document.getElementById('ctx-search').addEventListener('click', e => e.stopPropagation());
+document.addEventListener('click', e => {
+  if (!e.target.closest('#ctx-menu') && !e.target.closest('#add-node-btn')) hideCtxMenu();
+});
+document.addEventListener('keydown', e => {
+  const tag = document.activeElement?.tagName;
+  const typing = tag === 'TEXTAREA' || tag === 'INPUT' || document.activeElement?.isContentEditable;
+  const key = e.key.toLowerCase();
+  if (typing) {
+    if (e.key === 'Escape') document.activeElement.blur();
+    return;
+  }
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (!e.repeat) {
+      state.spacePanActive = true;
+      setCanvasCursor();
+    }
+    return;
+  }
+  if ((e.metaKey || e.ctrlKey) && key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+  else if (((e.metaKey || e.ctrlKey) && key === 'y') || ((e.metaKey || e.ctrlKey) && e.shiftKey && key === 'z')) { e.preventDefault(); redo(); }
+  else if ((e.metaKey || e.ctrlKey) && key === 'a') { e.preventDefault(); state.selectedNodes = new Set(state.nodes.map(n => n.id)); state.selectedGroup = null; state.selectedConnection = null; syncSelectionUI(); renderConnections(); }
+  else if ((e.metaKey || e.ctrlKey) && key === 'c') { e.preventDefault(); copySelection(); }
+  else if ((e.metaKey || e.ctrlKey) && key === 'v') { e.preventDefault(); pasteClipboard(); }
+  else if ((e.metaKey || e.ctrlKey) && key === 'd') { e.preventDefault(); duplicateSelection(); }
+  else if ((e.metaKey || e.ctrlKey) && key === 'g') { e.preventDefault(); createGroupFromSelection(); }
+  else if ((e.metaKey || e.ctrlKey) && e.shiftKey && key === 'g') { e.preventDefault(); ungroupSelected(); }
+  else if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); deleteSelection(); }
+  else if (e.key === 'Escape') { hideCtxMenu(); clearSelection(); }
+});
+document.addEventListener('keyup', e => {
+  if (e.code !== 'Space') return;
+  state.spacePanActive = false;
+  if (!state.isPanning) setCanvasCursor();
+});
+document.getElementById('run-all-btn').addEventListener('click', runAll);
+
+window.replaceImage = function(nodeId) {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'image/*';
+  input.onchange = e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const n = state.nodes.find(n => n.id === nodeId); if (!n) return;
+      n.data.src = ev.target.result;
+      const thumb = n.el.querySelector('.img-thumb');
+      if (thumb) thumb.innerHTML = `<img src="${ev.target.result}" alt=""/><div class="img-overlay"><button onclick="replaceImage('${nodeId}')">Replace image</button></div>`;
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+};
+
+function initDefaultLayout() {
+  state.panX = 60; state.panY = 80; state.scale = 1;
+  createNode('prompt', 80, 30);
+  state.connections = [];
+  applyTransform(); renderConnections(); syncToolbarState();
+}
+initDefaultLayout();
+</script>
+</body>
+</html>
