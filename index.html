@@ -141,6 +141,28 @@
       border-radius: 7px; background: rgba(10,10,12,.92); color: rgba(205,225,255,.9);
       font-size: 10px; font-weight: 500; white-space: nowrap;
     }
+    .selection-actions {
+      --action-scale: 1;
+      position: absolute; top: -34px; left: 50%; transform: translateX(-50%) scale(var(--action-scale));
+      transform-origin: center bottom;
+      height: 32px; padding: 3px; gap: 2px; border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12); background: rgba(28,28,32,.92);
+      box-shadow: 0 10px 28px rgba(0,0,0,.55); display: none; align-items: center; z-index: 260;
+      backdrop-filter: blur(12px);
+    }
+    .node.selected > .selection-actions,
+    .group-frame.selected > .selection-actions { display: flex; }
+    .node.suppress-node-actions > .selection-actions { display: none; }
+    .selection-action-btn {
+      width: 25px; height: 25px; border-radius: 999px; border: 0; background: transparent;
+      color: rgba(232,232,240,.82); display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: background .15s, color .15s;
+    }
+    .selection-action-btn:hover { background: rgba(255,255,255,.09); color: #fff; }
+    .selection-action-btn.active { color: var(--accent); background: rgba(245,200,66,.12); }
+    .selection-action-btn.danger:hover { color: var(--red); background: rgba(255,85,85,.11); }
+    .selection-action-btn svg { width: 14px; height: 14px; }
+    .node.locked, .group-frame.locked { cursor: default; }
     .group-resize-handle {
       position: absolute; z-index: 240; pointer-events: auto; opacity: 0;
       border: 0; background: transparent; box-shadow: none;
@@ -153,7 +175,17 @@
     .group-resize-handle.nw,
     .group-resize-handle.ne,
     .group-resize-handle.se,
-    .group-resize-handle.sw { width: 14px; height: 14px; border-radius: 4px; }
+    .group-resize-handle.sw { width: 14px; height: 14px; border-radius: 999px; }
+    .group-resize-handle.corner-visible {
+      opacity: 1;
+      background: #fff;
+      border: 1px solid rgba(74,158,255,.95);
+      box-shadow: 0 0 0 2px rgba(74,158,255,.22), 0 4px 12px rgba(0,0,0,.5);
+    }
+    .group-resize-handle.corner-visible:hover {
+      opacity: 1;
+      box-shadow: 0 0 0 3px rgba(74,158,255,.34), 0 5px 14px rgba(0,0,0,.55);
+    }
     .group-resize-handle.nw,
     .group-resize-handle.se { cursor: nwse-resize; }
     .group-resize-handle.ne,
@@ -196,6 +228,41 @@
     .node-port-out:hover { border-color: var(--blue); background: rgba(74,158,255,.15); }
     .node-port-out svg { width: 8px; height: 8px; color: var(--text3); }
     .node-body { padding: 12px; }
+    .node.media-compact {
+      overflow: visible;
+      background: transparent;
+      border-color: rgba(255,255,255,.09);
+      box-shadow: 0 10px 30px rgba(0,0,0,.52);
+    }
+    .node.media-compact .node-header {
+      position: absolute; inset: 0; z-index: 5; padding: 0; border-bottom: 0;
+      background: transparent; pointer-events: none;
+    }
+    .node.media-compact .node-icon,
+    .node.media-compact .node-title { display: none; }
+    .node.media-compact .node-port-out {
+      position: absolute; right: -10px; top: 50%; transform: translateY(-50%);
+      pointer-events: auto; opacity: .42;
+    }
+    .node.media-compact .node-port-out:hover { opacity: 1; }
+    .node.media-compact .node-body { padding: 0; }
+    .node.media-compact .img-thumb,
+    .node.media-compact .video-preview {
+      margin: 0; border-radius: 9px; border: 1px solid rgba(255,255,255,.11);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.18);
+    }
+    .node.media-compact .img-overlay,
+    .node.media-compact .ratio-row,
+    .node.media-compact .video-control-row,
+    .node.media-compact .image-chip-row,
+    .node.media-compact .prompt-chip-row,
+    .node.media-compact .video-prompt-box,
+    .node.media-compact .frame-output-row,
+    .node.media-compact .video-footer-row,
+    .node.media-compact .node-resize-handle,
+    .node.media-compact .node-progress { display: none !important; }
+    .node.media-compact .node-ports-left { opacity: .25; }
+    .node.media-compact .node-ports-left:hover { opacity: .9; }
     .img-thumb { width: 100%; aspect-ratio: 16/10; border-radius: 8px; overflow: hidden; background: var(--surface2); position: relative; }
     .img-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .img-thumb .img-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .2s; }
@@ -294,6 +361,12 @@
       display: flex; align-items: center; justify-content: center; cursor: crosshair; transition: all .15s; position: relative;
     }
     .port-left:hover { border-color: var(--blue); background: rgba(74,158,255,.1); }
+    .port-left.magnetic {
+      border-color: var(--accent);
+      background: rgba(245,200,66,.16);
+      box-shadow: 0 0 0 5px rgba(245,200,66,.08), 0 0 16px rgba(245,200,66,.28);
+      transform: scale(1.12);
+    }
     .port-left .port-label { position: absolute; right: 26px; top: 50%; transform: translateY(-50%); font-size: 9px; color: var(--text3); white-space: nowrap; font-family: 'DM Mono', monospace; pointer-events: none; }
     .port-left .port-dot-icon { width: 10px; height: 10px; color: var(--text2); }
     .frame-output-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
@@ -360,6 +433,9 @@
     .ctx-item:hover { background: var(--surface2); color: var(--text); }
     .ctx-item.disabled { opacity: .38; pointer-events: none; }
     .ctx-hidden { display: none !important; }
+    .ctx-group-hidden { display: none !important; }
+    .group-menu-only { display: none !important; }
+    #ctx-menu.group-menu .group-menu-only { display: flex !important; }
     .ctx-item .ctx-icon { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .ctx-sep { height: 1px; background: var(--border); margin: 4px 0; }
     .node-progress { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; border-radius: 0 0 var(--radius) var(--radius); background: var(--surface3); overflow: hidden; }
@@ -401,10 +477,6 @@
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="12" height="10" rx="2"/><path d="M6 8l2 2 3-4"/></svg>
         Run imgs
       </button>
-      <div class="toolbar-sep"></div>
-      <button class="action-btn" id="toolbar-download-media" title="Download all media">Media</button>
-      <button class="action-btn" id="toolbar-download-images" title="Download all images">Images</button>
-      <button class="action-btn" id="toolbar-download-videos" title="Download all videos">Videos</button>
       <button class="action-btn icon-only" id="toolbar-download" title="Download project JSON">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8"/><path d="M4.5 6.5L8 10l3.5-3.5"/><path d="M3 13h10"/></svg>
       </button>
@@ -454,6 +526,9 @@
   <div class="ctx-item" data-action="group"><div class="ctx-icon" style="background:rgba(74,158,255,0.15);color:#4a9eff">▣</div>Make Group</div>
   <div class="ctx-item" data-action="select-group"><div class="ctx-icon" style="background:rgba(74,158,255,0.15);color:#4a9eff">⊡</div>Select Group</div>
   <div class="ctx-item" data-action="ungroup"><div class="ctx-icon" style="background:rgba(255,85,85,0.12);color:#ff5555">⌫</div>Ungroup</div>
+  <div class="ctx-item group-menu-only" data-action="download-images"><div class="ctx-icon" style="background:rgba(74,158,255,0.15);color:#4a9eff">↓</div>Images Download</div>
+  <div class="ctx-item group-menu-only" data-action="download-videos"><div class="ctx-icon" style="background:rgba(61,220,132,0.15);color:#3ddc84">↓</div>Videos Download</div>
+  <div class="ctx-item group-menu-only" data-action="download-media"><div class="ctx-icon" style="background:rgba(245,200,66,0.15);color:#f5c842">↓</div>Media Download</div>
   <div class="ctx-sep"></div>
   <div class="ctx-section">Add Node</div>
   <div class="ctx-item" data-type="prompt"><div class="ctx-icon" style="background:rgba(168,85,247,0.15);"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#a855f7" stroke-width="1.8" stroke-linecap="round"><path d="M2 4h12M2 8h8M2 12h5"/></svg></div>Prompt</div>
@@ -483,7 +558,7 @@ const state = {
   nodes: [], connections: [], groups: [], nextId: 1, nextGroupId: 1,
   scale: 1, panX: 0, panY: 0, isPanning: false, spacePanActive: false, panStart: null,
   draggingNode: null, dragOffsetX: 0, dragOffsetY: 0, dragStart: null,
-  activeTool: 'select', isRunning: false, connectingFrom: null,
+  activeTool: 'select', isRunning: false, connectingFrom: null, magneticPort: null,
   selectedNodes: new Set(), selectedGroup: null, selectedConnection: null, marquee: null, groupDrag: null,
   groupResize: null, undoStack: [], redoStack: [], clipboard: null, restoring: false, squiggle: true
 };
@@ -519,13 +594,13 @@ function snapshotState() {
   return {
     nodes: state.nodes.map(n => ({
       id: n.id, type: n.type, x: n.x, y: n.y, scale: n.scale || 1,
-      data: JSON.parse(JSON.stringify(n.data || {})), groupId: n.groupId || null,
+      locked: !!n.locked, data: JSON.parse(JSON.stringify(n.data || {})), groupId: n.groupId || null,
       width: n.el?.style.width || '', minHeight: n.el?.style.minHeight || ''
     })),
     connections: state.connections.map(c => ({ ...c })),
     groups: state.groups.map(g => ({
       id: g.id, name: g.name, nodeIds: [...g.nodeIds], x: g.x, y: g.y, w: g.w, h: g.h,
-      manualSize: !!g.manualSize
+      manualSize: !!g.manualSize, locked: !!g.locked
     })),
     nextId: state.nextId,
     nextGroupId: state.nextGroupId,
@@ -557,6 +632,7 @@ function restoreSnapshot(snap) {
     n.data = JSON.parse(JSON.stringify(saved.data || {}));
     n.scale = saved.scale || 1;
     n.groupId = saved.groupId || null;
+    n.locked = !!saved.locked;
     if (saved.width) n.el.style.width = saved.width;
     if (saved.minHeight) n.el.style.minHeight = saved.minHeight;
     applyNodeScale(n);
@@ -602,6 +678,16 @@ function screenToCanvas(sx, sy) {
 function esc(v) {
   return String(v ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
+function selectionActionsHTML(scope) {
+  return `<div class="selection-actions" data-selection-actions="${scope}">
+    <button class="selection-action-btn" data-selection-action="lock" title="Lock">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="8" height="6" rx="1.4"/><path d="M5.5 7V5.2a2.5 2.5 0 0 1 5 0V7"/></svg>
+    </button>
+    <button class="selection-action-btn danger" data-selection-action="delete" title="Delete">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4h11"/><path d="M6 4V2.5h4V4"/><path d="M4.3 4l.5 9h6.4l.5-9"/><path d="M6.8 6.7v4M9.2 6.7v4"/></svg>
+    </button>
+  </div>`;
+}
 
 const NODE_TYPES = {
   prompt: { title: 'Prompt', iconBg: 'rgba(168,85,247,0.2)', iconColor: '#a855f7', iconSvg: `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4h12M2 8h8M2 12h5"/></svg>`, defaultData: { text: 'Create a cinematic video by using Image 1 as the starting frame and Image 2 as the visual outcome reference. Keep the exact same claymation miniature world, same fisherman character, same outfit, same orange beanie, blue jacket, brown pants, green boots, fishing rod, snowy pine forest, cracked frozen lake, bucket of fish, wooden stump, lighting, colors, and handcrafted toy-like texture.' } },
@@ -626,7 +712,7 @@ function createNode(type, x, y) {
   if (!def) return;
   const id = uid();
   const data = JSON.parse(JSON.stringify(def.defaultData));
-  const nodeObj = { id, type, x, y, scale: 1, data, el: null, groupId: null };
+  const nodeObj = { id, type, x, y, scale: 1, data, el: null, groupId: null, locked: false };
   state.nodes.push(nodeObj);
   const el = document.createElement('div');
   el.className = type === 'videogen' ? 'node video-node' : type === 'stickynote' ? 'node sticky-node' : 'node';
@@ -634,6 +720,7 @@ function createNode(type, x, y) {
   if (def.width) el.style.width = def.width + 'px';
   el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.position = 'absolute';
   el.innerHTML = buildNodeHTML(type, id, data, def);
+  el.insertAdjacentHTML('beforeend', selectionActionsHTML('node'));
   canvas.appendChild(el);
   nodeObj.el = el;
   attachNodeEvents(el, nodeObj);
@@ -723,6 +810,7 @@ function attachNodeEvents(el, nodeObj) {
   const resizeHandle = el.querySelector('.node-resize-handle');
   if (resizeHandle) resizeHandle.addEventListener('mousedown', e => {
     e.stopPropagation(); e.preventDefault();
+    if (nodeObj.locked) { showToast('Node locked'); return; }
     pushHistory();
     const startW = el.offsetWidth, startH = el.offsetHeight, startX = e.clientX, startY = e.clientY;
     function onMove(ev) { el.style.width = Math.max(330, startW + (ev.clientX - startX) / state.scale) + 'px'; el.style.minHeight = Math.max(420, startH + (ev.clientY - startY) / state.scale) + 'px'; renderConnections(); refreshContainingGroup(nodeObj); }
@@ -747,9 +835,25 @@ function handleNodeSelection(nodeObj, e) {
 }
 function clearSelection() { state.selectedNodes.clear(); state.selectedGroup = null; state.selectedConnection = null; syncSelectionUI(); renderConnections(); }
 function syncSelectionUI() {
-  state.nodes.forEach(n => { n.el.classList.toggle('selected', state.selectedNodes.has(n.id)); n.el.classList.toggle('group-member', !!n.groupId); });
   const fullGroups = selectedFullGroups();
-  state.groups.forEach(g => g.el.classList.toggle('selected', state.selectedGroup === g.id || isGroupFullySelected(g)));
+  const fullGroupIds = new Set(fullGroups.map(g => g.id));
+  state.nodes.forEach(n => {
+    n.el.classList.toggle('selected', state.selectedNodes.has(n.id));
+    n.el.classList.toggle('group-member', !!n.groupId);
+    n.el.classList.toggle('suppress-node-actions', !!n.groupId && fullGroupIds.has(n.groupId));
+    n.el.classList.toggle('locked', !!n.locked);
+    n.el.querySelector('[data-selection-action="lock"]')?.classList.toggle('active', !!n.locked);
+  });
+  state.groups.forEach(g => {
+    const selected = state.selectedGroup === g.id || isGroupFullySelected(g);
+    g.el.classList.toggle('selected', selected);
+    g.el.classList.toggle('locked', !!g.locked);
+    g.el.querySelector('[data-selection-action="lock"]')?.classList.toggle('active', !!g.locked);
+    g.handles?.forEach(handle => {
+      const isCorner = ['nw', 'ne', 'se', 'sw'].includes(handle.dataset.dir);
+      handle.classList.toggle('corner-visible', selected && isCorner);
+    });
+  });
   const count = state.selectedNodes.size;
   document.getElementById('save-status').textContent = state.selectedConnection ? 'Connection selected' : fullGroups.length > 1 ? `${fullGroups.length} groups selected` : state.selectedGroup ? `Group selected` : count ? `${count} selected` : 'Saved';
   syncToolbarState();
@@ -781,14 +885,15 @@ function handleGroupSelection(group, e) {
 }
 function startGroupDrag(group, e) {
   e.stopPropagation();
+  if (group.locked) { handleGroupSelection(group, e); showToast('Group locked'); return; }
   pushHistory();
   handleGroupSelection(group, e);
   const groups = selectedFullGroups();
   state.groupDrag = {
     clientX: e.clientX,
     clientY: e.clientY,
-    nodes: selectedNodes().map(n => ({ id: n.id, x: n.x, y: n.y })),
-    groups: groups.map(g => ({ id: g.id, x: g.x, y: g.y }))
+    nodes: selectedNodes().filter(n => !n.locked && !groupOfNode(n.id)?.locked).map(n => ({ id: n.id, x: n.x, y: n.y })),
+    groups: groups.filter(g => !g.locked).map(g => ({ id: g.id, x: g.x, y: g.y }))
   };
   groups.forEach(g => g.el.classList.add('dragging'));
 }
@@ -799,19 +904,63 @@ function selectConnection(connId) {
   syncSelectionUI();
   renderConnections();
 }
+function handleSelectionAction(actionEl, e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const action = actionEl.dataset.selectionAction;
+  const groupEl = actionEl.closest('.group-frame');
+  const nodeEl = actionEl.closest('.node');
+  if (action === 'delete') {
+    if (groupEl) {
+      const group = state.groups.find(g => g.el === groupEl);
+      if (group) selectGroup(group.id);
+    } else if (nodeEl && !state.selectedNodes.has(nodeEl.id)) {
+      clearSelection();
+      state.selectedNodes.add(nodeEl.id);
+      syncSelectionUI();
+    }
+    deleteSelection();
+    return;
+  }
+  if (action === 'lock') {
+    pushHistory();
+    if (groupEl) {
+      const group = state.groups.find(g => g.el === groupEl);
+      if (!group) return;
+      group.locked = !group.locked;
+      selectGroup(group.id);
+      showToast(group.locked ? 'Group locked' : 'Group unlocked');
+    } else if (nodeEl) {
+      const node = state.nodes.find(n => n.id === nodeEl.id);
+      if (!node) return;
+      node.locked = !node.locked;
+      state.selectedNodes.add(node.id);
+      state.selectedConnection = null;
+      syncPrimarySelectedGroup();
+      showToast(node.locked ? 'Node locked' : 'Node unlocked');
+    }
+    syncSelectionUI();
+  }
+}
+document.addEventListener('mousedown', e => {
+  const selectionAction = e.target.closest?.('.selection-action-btn');
+  if (selectionAction) handleSelectionAction(selectionAction, e);
+}, true);
 
 function startDrag(e, nodeObj) {
+  if (nodeObj.locked) { showToast('Node locked'); return; }
+  if (groupOfNode(nodeObj.id)?.locked) { showToast('Group locked'); return; }
   pushHistory();
   state.draggingNode = nodeObj;
   const rect = nodeObj.el.getBoundingClientRect();
   state.dragOffsetX = e.clientX - rect.left;
   state.dragOffsetY = e.clientY - rect.top;
-  const nodes = selectedNodes().length ? selectedNodes() : [nodeObj];
+  const nodes = (selectedNodes().length ? selectedNodes() : [nodeObj]).filter(n => !n.locked && !groupOfNode(n.id)?.locked);
   if (!nodes.length) return;
   state.dragStart = {
     clientX: e.clientX, clientY: e.clientY,
     nodes: nodes.map(n => ({ id: n.id, x: n.x, y: n.y })),
-    groups: state.groups.filter(g => g.nodeIds.every(id => state.selectedNodes.has(id))).map(g => ({ id: g.id, x: g.x, y: g.y }))
+    groups: state.groups.filter(g => !g.locked && g.nodeIds.every(id => state.selectedNodes.has(id))).map(g => ({ id: g.id, x: g.x, y: g.y }))
   };
   nodes.forEach(n => { n.el.classList.add('dragging'); n.el.style.zIndex = 100; });
 }
@@ -822,11 +971,11 @@ function createGroupFromSelection() {
   pushHistory();
   const bounds = getNodeBounds(nodes, 28);
   const id = gid();
-  const group = { id, name: nextGroupName(), nodeIds: nodes.map(n => n.id), x: bounds.x, y: bounds.y, w: bounds.w, h: bounds.h, el: null, handles: [], manualSize: false };
+  const group = { id, name: nextGroupName(), nodeIds: nodes.map(n => n.id), x: bounds.x, y: bounds.y, w: bounds.w, h: bounds.h, el: null, handles: [], manualSize: false, locked: false };
   nodes.forEach(n => n.groupId = id);
   const el = document.createElement('div');
   el.className = 'group-frame';
-  el.innerHTML = `<div class="group-label">${group.name}</div>`;
+  el.innerHTML = `<div class="group-label">${group.name}</div>${selectionActionsHTML('group')}`;
   group.el = el;
   canvas.insertBefore(el, svg.nextSibling);
   ['nw','n','ne','e','se','s','sw','w'].forEach(dir => {
@@ -860,11 +1009,11 @@ function createGroupFromSelection() {
 function createGroupFromData(saved, options = {}) {
   const group = {
     id: saved.id, name: options.preserveName ? saved.name : nextGroupName(), nodeIds: [...saved.nodeIds], x: saved.x, y: saved.y,
-    w: saved.w, h: saved.h, el: null, handles: [], manualSize: !!saved.manualSize
+    w: saved.w, h: saved.h, el: null, handles: [], manualSize: !!saved.manualSize, locked: !!saved.locked
   };
   const el = document.createElement('div');
   el.className = 'group-frame';
-  el.innerHTML = `<div class="group-label">${esc(group.name)}</div>`;
+  el.innerHTML = `<div class="group-label">${esc(group.name)}</div>${selectionActionsHTML('group')}`;
   group.el = el;
   canvas.insertBefore(el, svg.nextSibling);
   ['nw','n','ne','e','se','s','sw','w'].forEach(dir => {
@@ -932,6 +1081,7 @@ function positionGroupFrame(group) {
 function beginGroupResize(group, e, dir) {
   e.stopPropagation();
   e.preventDefault();
+  if (group.locked) { selectGroup(group.id); showToast('Group locked'); return; }
   pushHistory();
   selectGroup(group.id);
   group.manualSize = true;
@@ -1018,12 +1168,13 @@ function copySelection() {
       y: group.y,
       w: group.w,
       h: group.h,
-      manualSize: !!group.manualSize
+      manualSize: !!group.manualSize,
+      locked: !!group.locked
     }));
   state.clipboard = {
     nodes: state.nodes.filter(n => ids.has(n.id)).map(n => ({
       id: n.id, type: n.type, x: n.x, y: n.y, scale: n.scale || 1,
-      data: JSON.parse(JSON.stringify(n.data || {})),
+      locked: !!n.locked, data: JSON.parse(JSON.stringify(n.data || {})),
       width: n.el.style.width || '', minHeight: n.el.style.minHeight || ''
     })),
     connections: state.connections.filter(c => ids.has(c.from) && ids.has(c.to)).map(c => ({ from: c.from, to: c.to, port: c.port || 'in', state: 'idle' })),
@@ -1041,6 +1192,7 @@ function pasteClipboard() {
     const n = createNode(saved.type, saved.x + 32, saved.y + 32);
     n.data = JSON.parse(JSON.stringify(saved.data || {}));
     n.scale = saved.scale || 1;
+    n.locked = !!saved.locked;
     if (saved.width) n.el.style.width = saved.width;
     if (saved.minHeight) n.el.style.minHeight = saved.minHeight;
     applyNodeScale(n);
@@ -1062,7 +1214,8 @@ function pasteClipboard() {
       y: group.y + 32,
       w: group.w,
       h: group.h,
-      manualSize: group.manualSize
+      manualSize: group.manualSize,
+      locked: !!group.locked
     });
   });
   syncSelectionUI();
@@ -1103,7 +1256,9 @@ function refreshGroupBounds(group) {
 function refreshContainingGroup(nodeObj) { if (nodeObj.groupId) refreshGroupBounds(nodeObj.groupId); }
 
 let tempLine = null, tempDot = null;
+const PORT_MAGNET_RADIUS = 34;
 function startConnect(e, nodeObj, portEl) {
+  clearMagneticPort();
   state.selectedConnection = null;
   syncSelectionUI();
   renderConnections();
@@ -1114,6 +1269,42 @@ function startConnect(e, nodeObj, portEl) {
   tempDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
   tempDot.classList.add('conn-dot', 'active'); tempDot.setAttribute('cx', pos.x); tempDot.setAttribute('cy', pos.y); svg.appendChild(tempDot);
   updateTempLine(pos, pos);
+}
+function clearMagneticPort() {
+  if (state.magneticPort?.portEl) state.magneticPort.portEl.classList.remove('magnetic');
+  state.magneticPort = null;
+}
+function getMagneticTargetPort(clientX, clientY, sourceNodeId) {
+  const sourceNode = state.nodes.find(n => n.id === sourceNodeId);
+  let best = null;
+  document.querySelectorAll('.port-left').forEach(portEl => {
+    if (portEl.dataset.node === sourceNodeId) return;
+    const targetNode = state.nodes.find(n => n.id === portEl.dataset.node);
+    if (!targetNode || !sourceNode) return;
+    const portName = portEl.dataset.port || 'in';
+    if (targetNode.type === 'videogen' && !videoPortAccepts(sourceNode.type, portName)) return;
+    const rect = portEl.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const distance = Math.hypot(clientX - cx, clientY - cy);
+    if (distance <= PORT_MAGNET_RADIUS && (!best || distance < best.distance)) {
+      best = { portEl, targetNode, distance };
+    }
+  });
+  return best;
+}
+function updateMagneticPort(clientX, clientY, sourceNodeId) {
+  const next = getMagneticTargetPort(clientX, clientY, sourceNodeId);
+  if (state.magneticPort?.portEl !== next?.portEl) {
+    clearMagneticPort();
+    if (next) {
+      next.portEl.classList.add('magnetic');
+      state.magneticPort = next;
+    }
+  } else if (next) {
+    state.magneticPort = next;
+  }
+  return state.magneticPort;
 }
 function getPortCenter(portEl) {
   const rect = portEl.getBoundingClientRect(), wrect = canvasWrap.getBoundingClientRect();
@@ -1166,12 +1357,27 @@ function getNodeOutputPort(nodeObj) {
 }
 function getNodeCenter(nodeObj) { return { x: nodeObj.x + nodeObj.el.offsetWidth * (nodeObj.scale || 1) / 2, y: nodeObj.y + nodeObj.el.offsetHeight * (nodeObj.scale || 1) / 2 }; }
 function updateTempLine(from, to) { if (tempLine) tempLine.setAttribute('d', makeCalmPath(from, to)); }
+function videoPortAccepts(sourceType, port) {
+  const imageTypes = ['image', 'upload', 'imagegen'];
+  const audioTypes = ['voiceover', 'voicegen', 'changevoice'];
+  if (port === 'prompt') return sourceType === 'prompt';
+  if (['first', 'last', 'ref'].includes(port)) return imageTypes.includes(sourceType);
+  if (port === 'audio') return audioTypes.includes(sourceType);
+  return true;
+}
+function videoPortLabel(port) {
+  return ({ prompt: 'Prompt', first: 'First frame', last: 'Last frame', ref: 'Reference', audio: 'Audio' })[port] || 'Input';
+}
+function videoPortSourceLabel(port) {
+  return ({ prompt: 'Prompt node', first: 'Image node', last: 'Image node', ref: 'Image node', audio: 'Audio node' })[port] || 'compatible node';
+}
 function finishConnect(e) {
   if (!state.connectingFrom) return;
   const { nodeId } = state.connectingFrom;
   const els = document.elementsFromPoint(e.clientX, e.clientY);
-  let targetNode = null, targetPort = null;
+  let targetNode = state.magneticPort?.targetNode || null, targetPort = state.magneticPort?.portEl || null;
   for (const el of els) {
+    if (targetNode && targetPort) break;
     const portEl = el.closest?.('.port-left');
     if (portEl && portEl.dataset.node !== nodeId) {
       targetPort = portEl;
@@ -1181,8 +1387,16 @@ function finishConnect(e) {
   }
   if (tempLine) { svg.removeChild(tempLine); tempLine = null; }
   if (tempDot) { svg.removeChild(tempDot); tempDot = null; }
-  if (targetNode && targetPort && !state.connections.find(c => c.from === nodeId && c.to === targetNode.id && c.port === targetPort.dataset.port)) {
-    state.connections.push({ id: uid(), from: nodeId, to: targetNode.id, port: targetPort.dataset.port || 'in', state: 'idle' });
+  clearMagneticPort();
+  const sourceNode = state.nodes.find(n => n.id === nodeId);
+  const portName = targetPort?.dataset.port || 'in';
+  if (targetNode?.type === 'videogen' && sourceNode && !videoPortAccepts(sourceNode.type, portName)) {
+    showToast(`${videoPortLabel(portName)} accepts ${videoPortSourceLabel(portName)} only`);
+    state.connectingFrom = null;
+    return;
+  }
+  if (targetNode && targetPort && !state.connections.find(c => c.from === nodeId && c.to === targetNode.id && c.port === portName)) {
+    state.connections.push({ id: uid(), from: nodeId, to: targetNode.id, port: portName, state: 'idle' });
     renderConnections(); refreshAllVideoInputChips(); showToast('Connected!');
   } else if (!targetNode) {
     showToast('Drop on a left input port');
@@ -1267,6 +1481,11 @@ function getParallelRunLevels() {
 }
 
 canvasWrap.addEventListener('mousedown', e => {
+  const selectionAction = e.target.closest?.('.selection-action-btn');
+  if (selectionAction) {
+    handleSelectionAction(selectionAction, e);
+    return;
+  }
   if (state.activeTool === 'pan' || state.spacePanActive || e.button === 1) {
     state.isPanning = true; state.panStart = { x: e.clientX - state.panX, y: e.clientY - state.panY }; canvasWrap.style.cursor = 'grabbing'; e.preventDefault();
   } else if (state.activeTool === 'select' && !e.target.closest('.node') && !e.target.closest('.group-frame')) {
@@ -1327,7 +1546,7 @@ document.addEventListener('mousemove', e => {
         );
         applyNodeScale(n);
       });
-      positionGroupFrame(g);
+      refreshGroupBounds(g);
       renderConnections();
     }
   }
@@ -1339,7 +1558,9 @@ document.addEventListener('mousemove', e => {
   }
   if (state.connectingFrom) {
     const fp = getPortCenter(state.connectingFrom.portEl), wrect = canvasWrap.getBoundingClientRect();
-    updateTempLine(fp, { x: (e.clientX - wrect.left - state.panX) / state.scale, y: (e.clientY - wrect.top - state.panY) / state.scale });
+    const magnet = updateMagneticPort(e.clientX, e.clientY, state.connectingFrom.nodeId);
+    const tp = magnet ? getPortCenter(magnet.portEl) : { x: (e.clientX - wrect.left - state.panX) / state.scale, y: (e.clientY - wrect.top - state.panY) / state.scale };
+    updateTempLine(fp, tp);
     if (tempDot) { tempDot.setAttribute('cx', fp.x); tempDot.setAttribute('cy', fp.y); }
   }
 });
@@ -1352,7 +1573,13 @@ document.addEventListener('mouseup', e => {
   if (state.connectingFrom) finishConnect(e);
 });
 function moveNode(n, x, y) { n.x = x; n.y = y; n.el.style.left = x + 'px'; n.el.style.top = y + 'px'; }
-function applyNodeScale(n) { n.el.style.transform = `scale(${n.scale || 1})`; }
+function applyNodeScale(n) {
+  n.el.style.transform = `scale(${n.scale || 1})`;
+  n.el.style.setProperty('--action-scale', String(1 / (n.scale || 1)));
+  const hasMediaSurface = !!n.el.querySelector('.img-thumb, .video-preview');
+  const hasActualMedia = !!(n.data?.src || n.data?.videoSrc);
+  n.el.classList.toggle('media-compact', hasMediaSurface && hasActualMedia && (n.scale || 1) <= 0.55);
+}
 function getSceneBounds(nodes = state.nodes, pad = 80) {
   const visible = nodes.length ? nodes : state.nodes;
   if (!visible.length) return null;
@@ -1474,10 +1701,10 @@ function downloadUrl(src, filename) {
   link.click();
   link.remove();
 }
-function collectMedia(kind) {
+function collectMedia(kind, nodes = state.nodes) {
   const images = [];
   const videos = [];
-  state.nodes.forEach((node, index) => {
+  nodes.forEach((node, index) => {
     if (node.data?.src) images.push({ src: node.data.src, name: `image-${index + 1}.${mediaExt(node.data.src, 'png')}` });
     if (node.data?.videoSrc) videos.push({ src: node.data.videoSrc, name: `video-${index + 1}.${mediaExt(node.data.videoSrc, 'mp4')}` });
   });
@@ -1485,11 +1712,17 @@ function collectMedia(kind) {
   if (kind === 'videos') return videos;
   return [...images, ...videos];
 }
-function downloadMedia(kind) {
-  const media = collectMedia(kind);
-  if (!media.length) { showToast(`No ${kind} to download`); return; }
+function downloadMedia(kind, nodes = state.nodes, label = '') {
+  const media = collectMedia(kind, nodes);
+  if (!media.length) { showToast(`No ${kind} to download${label ? ` in ${label}` : ''}`); return; }
   media.forEach(item => downloadUrl(item.src, item.name));
-  showToast(`Downloading ${media.length} ${kind}`);
+  showToast(`Downloading ${media.length} ${kind}${label ? ` from ${label}` : ''}`);
+}
+function downloadGroupMedia(kind, groupId = ctxGroupId) {
+  const group = getGroup(groupId);
+  if (!group) { showToast('Right click a group first'); return; }
+  const nodes = group.nodeIds.map(id => state.nodes.find(n => n.id === id)).filter(Boolean);
+  downloadMedia(kind, nodes, group.name);
 }
 async function runOnlyImages() {
   if (state.isRunning) return;
@@ -1559,9 +1792,6 @@ document.getElementById('toolbar-ungroup').addEventListener('click', ungroupSele
 document.getElementById('toolbar-tidy').addEventListener('click', tidyUp);
 document.getElementById('toolbar-fit').addEventListener('click', () => fitToContent());
 document.getElementById('toolbar-run-images').addEventListener('click', runOnlyImages);
-document.getElementById('toolbar-download-media').addEventListener('click', () => downloadMedia('media'));
-document.getElementById('toolbar-download-images').addEventListener('click', () => downloadMedia('images'));
-document.getElementById('toolbar-download-videos').addEventListener('click', () => downloadMedia('videos'));
 document.getElementById('toolbar-download').addEventListener('click', downloadProject);
 document.getElementById('toolbar-delete').addEventListener('click', deleteSelection);
 document.getElementById('squiggle-btn').addEventListener('click', () => {
@@ -1573,31 +1803,50 @@ document.getElementById('squiggle-btn').addEventListener('click', () => {
   showToast(state.squiggle ? 'Squiggle on' : 'Calm running lines');
 });
 
-let ctxPos = { x: 0, y: 0 }, ctxNodeId = null;
+let ctxPos = { x: 0, y: 0 }, ctxNodeId = null, ctxGroupId = null;
 canvasWrap.addEventListener('contextmenu', e => {
   e.preventDefault();
   ctxPos = screenToCanvas(e.clientX, e.clientY);
   const nodeEl = e.target.closest('.node'), groupEl = e.target.closest('.group-frame');
   ctxNodeId = nodeEl?.id || null;
+  ctxGroupId = null;
   if (ctxNodeId && !state.selectedNodes.has(ctxNodeId)) { clearSelection(); state.selectedNodes.add(ctxNodeId); syncSelectionUI(); }
-  if (groupEl) { const group = state.groups.find(g => g.el === groupEl); if (group) selectGroup(group.id); }
+  if (ctxNodeId) ctxGroupId = groupOfNode(ctxNodeId)?.id || null;
+  if (groupEl) { const group = state.groups.find(g => g.el === groupEl); if (group) { ctxGroupId = group.id; selectGroup(group.id); } }
+  if (!ctxGroupId) {
+    const group = state.groups.find(g => ctxPos.x >= g.x && ctxPos.x <= g.x + g.w && ctxPos.y >= g.y && ctxPos.y <= g.y + g.h);
+    if (group) { ctxGroupId = group.id; selectGroup(group.id); }
+  }
   updateContextMenu();
   showCtxMenu(e.clientX, e.clientY);
 });
 document.getElementById('add-node-btn').addEventListener('click', e => {
   const r = e.currentTarget.getBoundingClientRect();
   ctxPos = screenToCanvas(r.left, r.top - 20);
+  ctxNodeId = null;
+  ctxGroupId = null;
   updateContextMenu();
   showCtxMenu(r.left, r.top - 320);
 });
 function updateContextMenu() {
   const group = document.querySelector('[data-action="group"]'), selectGroupItem = document.querySelector('[data-action="select-group"]'), ungroup = document.querySelector('[data-action="ungroup"]');
+  const isGroupMenu = !!ctxGroupId;
+  document.getElementById('ctx-menu').classList.toggle('group-menu', isGroupMenu);
+  document.querySelector('.ctx-search-wrap').classList.toggle('ctx-hidden', isGroupMenu);
+  document.querySelectorAll('#ctx-list > *').forEach(el => {
+    if (isGroupMenu) el.classList.remove('ctx-hidden');
+    const isSelectionItem = el.classList.contains('ctx-section') && el.textContent.trim() === 'Selection';
+    const isGroupDownload = el.classList.contains('group-menu-only');
+    const isBaseGroupAction = el.matches('[data-action="group"], [data-action="select-group"], [data-action="ungroup"]');
+    el.classList.toggle('ctx-group-hidden', isGroupMenu && !(isSelectionItem || isBaseGroupAction || isGroupDownload));
+  });
   group.classList.toggle('disabled', state.selectedNodes.size < 2);
-  selectGroupItem.classList.toggle('disabled', !ctxNodeId || !groupOfNode(ctxNodeId));
-  ungroup.classList.toggle('disabled', !state.selectedGroup && !groupOfNode([...state.selectedNodes][0]));
+  selectGroupItem.classList.toggle('disabled', !ctxGroupId);
+  ungroup.classList.toggle('disabled', !ctxGroupId && !state.selectedGroup && !groupOfNode([...state.selectedNodes][0]));
   filterContextMenu();
 }
 function filterContextMenu() {
+  if (document.getElementById('ctx-menu').classList.contains('group-menu')) return;
   const query = document.getElementById('ctx-search').value.trim().toLowerCase();
   const list = document.getElementById('ctx-list');
   const children = Array.from(list.children);
@@ -1640,8 +1889,14 @@ document.getElementById('ctx-menu').querySelectorAll('.ctx-item').forEach(item =
   const type = item.dataset.type, action = item.dataset.action;
   if (type) { pushHistory(); createNode(type, ctxPos.x, ctxPos.y); }
   if (action === 'group') createGroupFromSelection();
-  if (action === 'select-group' && ctxNodeId) { const g = groupOfNode(ctxNodeId); if (g) selectGroup(g.id); }
+  if (action === 'select-group') {
+    const group = ctxGroupId ? getGroup(ctxGroupId) : (ctxNodeId ? groupOfNode(ctxNodeId) : null);
+    if (group) selectGroup(group.id);
+  }
   if (action === 'ungroup') ungroupSelected();
+  if (action === 'download-images') downloadGroupMedia('images');
+  if (action === 'download-videos') downloadGroupMedia('videos');
+  if (action === 'download-media') downloadGroupMedia('media');
   hideCtxMenu();
 }));
 document.getElementById('ctx-search').addEventListener('input', filterContextMenu);
@@ -1695,6 +1950,7 @@ window.replaceImage = function(nodeId) {
       n.data.src = ev.target.result;
       const thumb = n.el.querySelector('.img-thumb');
       if (thumb) thumb.innerHTML = `<img src="${ev.target.result}" alt=""/><div class="img-overlay"><button onclick="replaceImage('${nodeId}')">Replace image</button></div>`;
+      applyNodeScale(n);
     };
     reader.readAsDataURL(file);
   };
